@@ -1,0 +1,35 @@
+{
+    "name": "Hubli",
+    "short_name": "Hubli",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#72BF44",
+    "theme_color": "#72BF44",
+    "description": "Hubli is an online shopping app that allows users to browse grocery products, add items to cart, submit RFQ, track orders, manage wishlist, and view shipping updates.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

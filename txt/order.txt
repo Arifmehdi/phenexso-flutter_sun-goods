@@ -1,0 +1,15 @@
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function simpleList()
+    {
+        $orders = Order::select('id', 'name', 'grand_total', 'payment_status', 'order_status', 'created_at')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'All orders retrieved successfully.',
+            'data' => $orders
+        ]);
+    }
+        Route::get('order-list', [OrderController::class, 'simpleList']);

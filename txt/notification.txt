@@ -1,0 +1,152 @@
+Route::get('/notifications', [NotificationController::class, 'index']);
+Route::post('/notifications/read/{id}', [NotificationController::class, 'markAsRead']);
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+}
+
+//notification model 
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class Notification extends Model
+{
+    use HasFactory;
+    protected $fillable = [
+        'user_id',
+        'title',
+        'message',
+        'ip_address',
+        'type',
+        'all_show',
+        'is_read'
+    ];
+}
+
+
+//notification logic (FIXED: Filter guest messages by IP)
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\Models\Notification;
+
+class NotificationController extends Controller
+{
+    public function index(Request $request)
+    {
+        $user = $request->user();
+        $ip = $request->ip();
+
+        $notifications = Notification::where(function ($query) use ($user, $ip) {
+            
+            if ($user) {
+                // Show user's private notifications
+                $query->where('user_id', $user->id)
+                // ALSO show notifications sent to their IP (Guest history)
+                ->orWhere(function($q) use ($ip) {
+                    $q->whereNull('user_id')->where('ip_address', $ip);
+                })
+                // ALSO show notifications meant for everyone
+                ->orWhere('all_show', 1);
+            } else {
+                // Guest: Show ONLY notifications for this specific IP OR public notifications
+                $query->where(function($q) use ($ip) {
+                    $q->whereNull('user_id')->where('ip_address', $ip);
+                })
+                ->orWhere('all_show', 1);
+            }
+
+        })
+        ->latest()
+        ->paginate(20);
+
+        return response()->json([
+            'status' => true,
+            'notifications' => $notifications
+        ]);
+    }
+
+    public function ipNotifications(Request $request)
+    {
+        $ip = $request->ip();
+
+        $notifications = Notification::whereNull('user_id')
+            ->where('ip_address', $ip)
+            ->latest()
+            ->paginate(20);
+
+        return response()->json([
+            'status' => true,
+            'notifications' => $notifications
+        ]);
+    }
+
+    public function markAsRead(Request $request, $id)
+    {
+        $user = $request->user();
+        $ip = $request->ip();
+
+        $notification = Notification::where('id', $id)
+            ->where(function ($query) use ($user, $ip) {
+                if ($user) {
+                    $query->where('user_id', $user->id)
+                          ->orWhere('ip_address', $ip);
+                } else {
+                    $query->whereNull('user_id')
+                          ->where('ip_address', $ip);
+                }
+            })
+            ->first();
+
+        if (!$notification) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Notification not found'
+            ], 404);
+        }
+
+        $notification->update([
+            'is_read' => 1
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Notification marked as read'
+        ]);
+    }
+
+    public function markAllRead(Request $request)
+    {
+        $user = $request->user();
+        $ip = $request->ip();
+
+        Notification::where(function ($query) use ($user, $ip) {
+            if ($user) {
+                $query->where('user_id', $user->id)
+                      ->orWhere(function($q) use ($ip) {
+                          $q->whereNull('user_id')->where('ip_address', $ip);
+                      })
+                      ->orWhere('all_show', 1);
+            } else {
+                $query->where(function($q) use ($ip) {
+                    $q->whereNull('user_id')->where('ip_address', $ip);
+                })
+                ->orWhere('all_show', 1);
+            }
+        })
+        ->where('is_read', 0) // Only update unread ones
+        ->update([
+            'is_read' => 1
+        ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'All notifications marked as read'
+        ]);
+    }
+}

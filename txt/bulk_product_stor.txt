@@ -1,0 +1,135 @@
+public function bulkStore(Request $request)
+{
+    $products = [];
+    $i = 0;
+    while ($request->has("products.$i.name_en")) {
+        $products[] = [
+            'name_en' => $request->input("products.$i.name_en"),
+            'slug' => $request->input("products.$i.slug"),
+            'selling_price' => $request->input("products.$i.price"),
+            'purchase_price' => $request->input("products.$i.purchase_price"),
+            'stock' => $request->input("products.$i.stock"),
+            'category_id' => $request->input("products.$i.category_id"),
+            'description_en' => $request->input("products.$i.description_en"),
+            'seller_id' => $request->input("products.$i.seller_id"),
+            'unit' => $request->input("products.$i.unit"),
+        ];
+        $i++;
+    }
+
+    if (!is_array($products) || empty($products)) {
+        return response()->json([
+            'message' => 'Products array is required'
+        ], 422);
+    }
+
+    $createdProducts = [];
+
+    foreach ($products as $index => $item) {
+
+        $validator = Validator::make($item, [
+            'name_en' => 'required|string|max:255',
+            'selling_price' => 'required|numeric',
+            'stock' => 'nullable|integer|min:0',
+            'seller_id' => 'nullable|exists:users,id',
+        ]);
+
+        if ($validator->fails()) {
+            continue;
+        }
+
+        $product = new Product();
+        $product->name_en = $item['name_en'];
+        $product->name_bn = $item['name_bn'] ?? null;
+        $product->sku = $item['sku'] ?? null;
+        $product->stock = $item['stock'] ?? 1;
+
+        $product->slug = getSlug($item['slug'] ?? $item['name_en'], $product);
+
+        $product->selling_price = $item['selling_price'] ?? 0;
+        $product->purchase_price = $item['purchase_price'] ?? 0;
+        $product->discount = $item['discount'] ?? 0;
+
+        $product->discount_price = $item['discount'] ?? 0;
+        $product->final_price = $product->selling_price - $product->discount;
+
+        $product->unit = $item['unit'] ?? null;
+
+        $product->excerpt_en = $item['excerpt_en'] ?? null;
+        $product->description_en = $item['description_en'] ?? null;
+
+        $product->feature = $item['feature'] ?? 0;
+        $product->editor = $item['editor'] ?? 0;
+        $product->active = $item['active'] ?? 1;
+
+        $product->rider_id = $item['rider_id'] ?? null;
+        $product->addedby_id = Auth::id();
+
+        $product->save();
+
+        /*
+        |---------------------------------------
+        | FEATURED IMAGE UPLOAD FROM BASE64
+        |---------------------------------------
+        */
+        if (isset($item['image_base64']) && !empty($item['image_base64'])) {
+            $imageData = base64_decode($item['image_base64']);
+            
+            // Detect mime type
+            $finfo = finfo_open();
+            $mime = finfo_buffer($finfo, $imageData, FILEINFO_MIME_TYPE);
+            finfo_close($finfo);
+            
+            $ext = 'png'; // default
+            if ($mime == 'image/jpeg') $ext = 'jpg';
+            elseif ($mime == 'image/png') $ext = 'png';
+            elseif ($mime == 'image/gif') $ext = 'gif';
+            
+            $imageName = $product->id . '_' . time() . '.' . $ext;
+            
+            Storage::disk('public')->put('product_images/' . $imageName, $imageData);
+            
+            $product->featured_image = $imageName;
+            $product->save();
+        }
+
+
+
+        /*
+        |---------------------------------------
+        | CATEGORY INSERT
+        |---------------------------------------
+        */
+        $catInput = $item['categories'] ?? $item['category_id'] ?? null;
+
+        if ($catInput) {
+
+            $categories = is_array($catInput) ? $catInput : explode(',', $catInput);
+
+            foreach ($categories as $catId) {
+
+                if (!empty($catId)) {
+
+                    ProductCat::create([
+                        'product_id' => $product->id,
+                        'product_category_id' => trim($catId),
+                        'addedby_id' => Auth::id(),
+                    ]);
+                }
+            }
+        }
+
+        $createdProducts[] = $product;
+    }
+
+    return ProductResource::collection(
+        Product::whereIn('id', collect($createdProducts)->pluck('id'))
+        ->with(['addedBy','categories'])
+        ->get()
+    );
+}
+
+this is logic for bulk product insert 
+and api is 
+
+Route::post('products/bulk-store', [ProductController::class, 'bulkStore']);

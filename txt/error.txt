@@ -1,0 +1,44 @@
+I/flutter (25323): Notification API Error: 500 - {
+I/flutter (25323):     "message": "SQLSTATE[42S22]: Column not found: 1054 Unknown column 'all_show' in 'WHERE' (SQL: select count(*) as aggregate from `notifications` where (`all_show` = 1 or (`all_show` != 1 and `ip_address` = 103.176.249.244)))",
+I/flutter (25323):     "exception": "Illuminate\\Database\\QueryException",
+I/flutter (25323):     "file": "/home/hublibdc/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php",
+I/flutter (25323):     "line": 760,
+I/flutter (25323):     "trace": [
+I/flutter (25323):         {
+I/flutter (25323):             "file": "/home/hublibdc/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php",
+I/flutter (25323):             "line": 720,
+I/flutter (25323):             "function": "runQueryCallback",
+I/flutter (25323):             "class": "Illuminate\\Database\\Connection",
+I/flutter (25323):             "type": "->"
+I/flutter (25323):         },
+I/flutter (25323):         {
+I/flutter (25323):             "file": "/home/hublibdc/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php",
+I/flutter (25323):             "line": 405,
+I/flutter (25323):             "function": "run",
+I/flutter (25323):             "class": "Illuminate\\Database\\Connection",
+I/flutter (25323):             "type": "->"
+I/flutter (25323):         },
+I/flutter (25323):
+I/flutter (25323): Error fetching notifications: Exception: Failed to fetch notifications: 500
+I/flutter (25323): Notification API Error: 500 - {
+I/flutter (25323):     "message": "SQLSTATE[42S22]: Column not found: 1054 Unknown column 'all_show' in 'WHERE' (SQL: select count(*) as aggregate from `notifications` where (`all_show` = 1 or (`all_show` != 1 and `ip_address` = 103.176.249.244)))",
+I/flutter (25323):     "exception": "Illuminate\\Database\\QueryException",
+I/flutter (25323):     "file": "/home/hublibdc/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php",
+I/flutter (25323):     "line": 760,
+I/flutter (25323):     "trace": [
+I/flutter (25323):         {
+I/flutter (25323):             "file": "/home/hublibdc/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php",
+I/flutter (25323):             "line": 720,
+I/flutter (25323):             "function": "runQueryCallback",
+I/flutter (25323):             "class": "Illuminate\\Database\\Connection",
+I/flutter (25323):             "type": "->"
+I/flutter (25323):         },
+I/flutter (25323):         {
+I/flutter (25323):             "file": "/home/hublibdc/public_html/vendor/laravel/framework/src/Illuminate/Database/Connection.php",
+I/flutter (25323):             "line": 405,
+I/flutter (25323):             "function": "run",
+I/flutter (25323):             "class": "Illuminate\\Database\\Connection",
+I/flutter (25323):             "type": "->"
+I/flutter (25323):         },
+I/flutter (25323):
+I/flutter (25323): Error fetching notifications: Exception: Failed to fetch notifications: 500

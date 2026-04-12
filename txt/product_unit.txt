@@ -1,0 +1,2077 @@
+@extends('admin.master')
+
+@section('title')
+   Admin Dashboard | Product Create
+@endsection
+
+@push('css')
+    <style>
+        /* Custom styling for product tags select box */
+        .productTags {
+            width: 100%;
+        }
+        /* Margin bottom utility class */
+        .margin-bottom {
+            margin-bottom: 20px;
+        }
+        /* Initially hide subcategory containers */
+        .subcat-add {
+            display: none;
+        }
+    </style>
+@endpush
+
+@section('body')
+<section class="content py-3">
+    <div class="row">
+        <div class="col-md-11 mx-auto">
+            {{-- Card Header --}}
+            <div class="card mb-2 shadow-lg">
+                <div class="card-header px-2 py-2">
+                    <h3 class="card-title w3-small text-bold text-muted pt-1">
+                        <i class="fas fa-plus-circle text-primary"></i>&nbsp; Add New Product
+                    </h3>
+                    <div class="card-tools w3-small">
+                        <a href="{{ route('admin.productsAll')}}" class="btn-create-from btn btn-outline-primary btn-xs pull-right mr-2 py-1">
+                            <i class="fa fa-arrow-left"></i> Back
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {{-- Product Create Form --}}
+            <form action="{{ route('admin.productStore')}}" method="POST" enctype="multipart/form-data">
+                @csrf
+
+                <div class="row">
+                    {{-- Left Column: Product Details --}}
+                    <div class="col-sm-7">
+                        <div class="card card-primary card-outline">
+                            <div class="card-body">
+                                {{-- Product Name (English)--}}
+                                <div class="form-group">
+                                    <label for="name_en">Product Name<span class="text-danger">*</span></label>
+                                    <input type="text" name="name_en" value="{{ old('name_en') }}" class="form-control" placeholder="Product Name (English)" onkeyup="makeSlug(this.value)" required>
+                                    @error('name_en')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                {{-- Slug --}}
+                                <div class="form-group">
+                                    <label for="slug">Slug <span class="text-danger">*</span></label>
+                                    <input type="text" id="slug" name="slug" value="{{ old('slug') }}" placeholder="URL" class="form-control" required>
+                                    @error('slug')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                {{-- Product Code --}}
+                                {{-- <div class="form-group">
+                                    <label for="product_code">Product Sku <span class="text-danger">*</span></label>
+                                    <input type="text" name="sku" value="{{ old('sku') }}" class="form-control" placeholder="Enter product Sku">
+                                    @error('sku')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div> --}}
+
+                                {{-- Product Price --}}
+                                {{--<div class="form-group">
+                                    <label for="price">Product Price <span class="text-danger">*</span></label>
+                                    <input type="number" name="price" value="{{ old('price') }}" class="form-control" placeholder="Enter price">
+                                    @error('price')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>--}}
+                                <div class="form-group">
+                                    <label for="purchase_price">Purchase Price <span class="text-danger">*</span></label>
+                                    <input type="number" name="purchase_price" value="{{ old('purchase_price') }}" class="form-control" placeholder="Enter purchase price">
+                                    @error('purchase_price')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <div class="form-group">
+                                    <label for="selling_price">Selling Price <span class="text-danger">*</span></label>
+                                    <input type="number" name="selling_price" value="{{ old('selling_price') }}" class="form-control" placeholder="Enter selling price">
+                                    @error('selling_price')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="price">Product Stock <span class="text-danger"></span></label>
+                                    <input type="number" name="stock" value="{{ old('stock') }}" class="form-control" placeholder="Enter stock">
+                                    @error('stock')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                {{-- Unit --}}
+                                <div class="form-group">
+                                    <label for="unit">Unit</label>
+                                    <select name="unit" id="unit" class="form-control">
+                                        <option value="">Select Unit</option>
+                                        @foreach($units  as $unit)
+                                            <option value="{{ $unit->name_en }}" {{ old('unit') == $unit->name_en ? 'selected' : '' }}>
+                                                {{ $unit->name_en }} {{ $unit->name_bn ? '(' . $unit->name_bn . ')' : '' }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('unit')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+                                {{-- Discount --}}
+                                <div class="form-group">
+                                    <label for="discount">Product Discount (flat)</label>
+                                    <input type="number" name="discount" value="{{ old('discount') }}" class="form-control" placeholder="Enter discount">
+                                </div>
+
+                                {{-- Rider Assignment --}}
+                                <div class="form-group">
+                                    <label for="rider_id">Assign Rider (Driver)</label>
+                                    <select name="rider_id" id="rider_id" class="form-control select2">
+                                        <option value="">Select Rider</option>
+                                        @foreach($riders as $rider)
+                                            <option value="{{ $rider->id }}" {{ old('rider_id') == $rider->id ? 'selected' : '' }}>
+                                                {{ $rider->name }} ({{ $rider->mobile }})
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    @error('rider_id')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+
+
+                            </div>
+                        </div>
+
+                        {{-- Excerpt & Description --}}
+                        <div class="card card-primary card-outline">
+                            <div class="card-body">
+                                {{-- Excerpt --}}
+                                <div class="form-group">
+                                    <label for="excerpt_en">Excerpt</label>
+                                    <textarea name="excerpt_en" id="excerpt_en" class="form-control" rows="2" placeholder="Excerpt">{{ old('excerpt_en') }}</textarea>
+                                </div>
+
+                                {{-- Description --}}
+                                <div class="form-group">
+                                    <label for="description_en">Description</label>
+                                    <textarea name="description_en" id="summernote" class="form-control summernote" rows="5" placeholder="Description">{{ old('description_en') }}</textarea>
+                                </div>
+
+                                {{-- Active Checkbox --}}
+                                <div class="form-group">
+                                    <label class="mr-3">
+                                        <input type="checkbox" name="active" {{ old('active', 1) ? 'checked' : '' }}>
+                                        Active
+                                    </label>
+                                </div>
+
+                                {{-- Feature Checkbox --}}
+                                <div class="form-group">
+                                    <label class="mr-3">
+                                        <input type="checkbox" name="feature" {{ old('feature', 1) ? 'checked' : '' }}>
+                                        Featured
+                                    </label>
+                                </div>
+
+                                {{-- Editor Checkbox --}}
+                                <div class="form-group">
+                                    <label>
+                                        <input type="checkbox" name="editor" {{ old('editor', 1) ? 'checked' : '' }}>
+                                        Editor
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Right Column: Featured Image and Media --}}
+                    <div class="col-sm-5">
+                        <div class="card card-primary card-outline margin-bottom">
+                            <div class="card-header">
+                                <h3 class="card-title">Add Featured Image</h3>
+                                <span class="text-danger">&nbsp;&nbsp;Better Size(210x210px)</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="form-group row">
+                                    <label for="feature_image" class="col-sm-4 col-form-label">Featured Image</label>
+                                    <div class="col-sm-6">
+                                        <input type="file" class="form-control-file" id="feature_image" name="featured_image" value="{{ old('feature_image') }}">
+                                    </div>
+                                    @error('feature_image')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                                <div class="form-group row">
+                                    <label for="additional_images" class="col-sm-4 col-form-label">Additional Images</label>
+                                    <div class="col-sm-6">
+                                        <input type="file" class="form-control-file" id="additional_images" name="additional_images[]" multiple>
+                                    </div>
+                                    @error('additional_images')
+                                        <span class="text-danger">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            </div>
+                        </div>
+
+                        {{-- Include media selection modal/component --}}
+                        @includeIf('admin.media.mediaContainer')
+                    </div>
+                </div>
+
+                {{-- Categories & Subcategories Section --}}
+                @if($categories->count() > 0)
+                <div class="row">
+                    <div class="col-12">
+                        <div class="add-categories-subcategories">
+                            <div class="card card-primary card-outline">
+                                <div class="card-header with-border">
+                                    <h3 class="card-title">Add Category</h3>
+                                </div>
+                                <div class="card-body p-2">
+                                    @foreach($categories as $cat)
+                                        <div class="category-area">
+                                            {{-- Category Checkbox --}}
+                                            <div class="custom-control custom-checkbox bg-light rounded-lg mb-1">
+                                                <input type="checkbox" class="custom-control-input toggle-category-checkbox" id="customCheckId_{{ $cat->id }}" name="categories[]" value="{{ $cat->id }}">
+                                                <label class="custom-control-label" for="customCheckId_{{ $cat->id }}">{{ $cat->name_en ?? $cat->name_bn }}</label>
+                                            </div>
+
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
+                {{-- Submit Button --}}
+                <div class="card-footer text-right">
+                    <input type="submit" class="btn btn-primary px-5" value="Save Product">
+                </div>
+            </form>
+        </div>
+    </div>
+</section>
+@endsection
+
+@push('js')
+<script>
+    $(document).ready(function () {
+        // Toggle product status active/inactive (if used somewhere)
+        $(document).on('click', ".productStatus", function(e){
+            e.preventDefault();
+            var that = $(this);
+            var url = that.attr('data-url');
+            $.ajax({
+                url: url,
+                method: "get",
+                success: function(res) {
+                    if(res.active == true) {
+                        that.removeClass('badge-danger').addClass('badge-primary').text('Active');
+                    } else {
+                        that.removeClass('badge-primary').addClass('badge-danger').text('Inactive');
+                    }
+                }
+            });
+        });
+
+        // Product search input AJAX call (if used somewhere)
+        $(document).on('keyup', ".product-search", function(e){
+            e.preventDefault();
+            var that = $(this);
+            var url = that.attr('data-url');
+            var q = that.val();
+            $.ajax({
+                url: url,
+                data: {q:q},
+                method: "get",
+                success: function(res) {
+                    if(res.success) {
+                        $(".data-container").empty().append(res.page);
+                    }
+                }
+            });
+        });
+
+
+        // Show/hide subcategories on category checkbox toggle
+        $(document).on('click', '.toggle-category-checkbox', function() {
+            var that = $(this);
+            if(that.is(":checked")) {
+                that.closest('.category-area').find('.subcat-add').show();
+            } else {
+                that.closest('.category-area').find('.subcat-add').hide();
+            }
+        });
+
+    });
+
+    // Slug generator from product name input
+    function makeSlug(val) {
+        let str = val;
+        let output = str.replace(/\s+/g, '-').toLowerCase();
+        $('#slug').val(output);
+    }
+</script>
+@endpush
+
+
+
+product create blade 
+
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Exports\OrdersExport;
+use App\Http\Controllers\Controller;
+use App\Models\ProductCategory;
+use App\Models\Product;
+use App\Models\ProductCat;
+use App\Models\Unit;
+use App\Models\Media;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Payment;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\{
+    Storage, File, DB, Cache, Auth, Validator
+};
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Traits\NotificationTrait;
+
+
+
+class ProductController extends Controller
+{
+    use NotificationTrait;
+    // Show All Categories
+    /**
+     * Display a paginated list of all product categories.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function productCategoriesAll()
+    {
+        // Set the current menu and submenu for active sidebar highlighting
+        menuSubmenu('product', 'productCategoriesAll');
+
+        // Fetch latest product categories with pagination (30 per page)
+        $categories = ProductCategory::with('children')
+            ->whereNull('parent_id') // ✅ Only top-level categories
+            ->latest()
+            ->paginate(30);
+
+    
+        // Return the view with data
+        return view('admin.productCategories.productCategoriesAll', compact('categories'));
+    }
+
+    /**
+    * Show the form to create a new product category.
+    *
+    * @return \Illuminate\View\View
+    */
+    public function productCategoryCreate()
+    {
+        // Set the current menu and submenu for sidebar highlighting
+        menuSubmenu('product', 'productCategoriesAll');
+        $categories = ProductCategory::with('children')->get();
+        // Return the view to create a new category
+        return view('admin.productCategories.productCategoryCreate', compact('categories'));
+    }
+
+    /**
+    * Store a newly created product category in storage.
+    *
+    * @param  \Illuminate\Http\Request  $request
+    * @return \Illuminate\Http\RedirectResponse
+    */
+    public function productCategoryStore(Request $request)
+    {
+        // Highlight correct menu in sidebar
+        menuSubmenu('product', 'productCategoriesAll');
+
+        // Validate incoming request
+        $request->validate([
+            'name_en' => 'required|string|max:255',
+            'slug'    => 'required|string|unique:product_categories,slug',
+            'image'   => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048'
+        ]);
+
+        // Initialize new category instance
+        $category = new ProductCategory();
+        $category->parent_id    = $request->parent_id;
+        $category->name_en      = $request->name_en;
+        $category->name_bn      = $request->name_bn ?? null;
+        $category->slug         = getSlug($request->slug, $category, true);
+        $category->excerpt      = $request->excerpt;
+        $category->active       = $request->boolean('active');
+        $category->addedby_id   = Auth::id();
+
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $file      = $request->file('image');
+            $imageName = time() . '.' . $file->getClientOriginalExtension();
+            Storage::disk('public')->put('product_categories_images/' . $imageName, File::get($file));
+            $category->image = $imageName;
+        }
+
+        // Save category
+        $category->save();
+
+        // Clear cache
+        Cache::flush();
+
+        return redirect()->route('admin.productCategoriesAll')->with('success', 'Category successfully created');
+    }
+
+    public function productCategoryEdit(Request $request, ProductCategory $category)
+    {
+        menuSubmenu('product', 'productCategoriesAll');
+        // Get all categories with children for hierarchical display
+        $categories = ProductCategory::whereNull('parent_id')
+            ->with(['children' => function($query) use ($category) {
+                $query->where('id', '!=', $category->id);
+            }])
+            ->where('id', '!=', $category->id)
+        ->get();
+        return view('admin.productCategories.productCategoryEdit', compact('category','categories'));
+    }
+
+    /**
+    * Update an existing product category
+    *
+    * @param  \Illuminate\Http\Request  $request
+    * @param  \App\Models\ProductCategory  $category
+    * @return \Illuminate\Http\RedirectResponse
+    */
+    public function productCategoryUpdate(Request $request, ProductCategory $category)
+    {
+        // Set active menu for admin sidebar
+        menuSubmenu('product', 'productCategoriesAll');
+
+        // Validate incoming request data
+        $validation = Validator::make($request->all(), [
+            'name_en' => 'required|string',
+            // Unique slug validation but ignore current category ID
+            'slug' => 'required|string|unique:product_categories,slug,' . $category->id . ',id',
+        ]);
+
+        if ($validation->fails()) {
+            toast('Something went wrong!', 'error');
+            return back()->withErrors($validation)->withInput();
+        }
+
+        // Update category fields
+        $category->parent_id    = $request->parent_id;
+        $category->name_en = $request->name_en;
+        $category->name_bn = $request->name_bn;
+        $category->slug = getSlug($request->slug, $category, true);
+        $category->excerpt = $request->excerpt;
+        $category->active = $request->boolean('active');
+        $category->editedby_id = Auth::id();
+
+        // Handle image replacement if a new image is uploaded
+        if ($request->hasFile('image')) {
+            $oldFile = 'product_categories_images/' . $category->image;
+
+            // Delete old image if exists
+            if (Storage::disk('public')->exists($oldFile)) {
+                Storage::disk('public')->delete($oldFile);
+            }
+
+            // Store new image
+            $file = $request->file('image');
+            $imageName = time() . '.' . $file->getClientOriginalExtension();
+            Storage::disk('public')->put('product_categories_images/' . $imageName, File::get($file));
+            $category->image = $imageName;
+        }
+
+        // Save the updated category
+        $category->save();
+
+        // Clear cache to reflect updates immediately
+        Cache::flush();
+
+
+        return redirect()->back()->with('success', 'Product Category successfully updated');
+
+    }
+
+    /**
+    * Delete a product category along with its image
+    *
+    * @param  \App\Models\ProductCategory  $category
+    * @return \Illuminate\Http\RedirectResponse
+    */
+    public function productCategoryDelete(ProductCategory $category)
+    {
+        // Set active menu for admin sidebar
+        menuSubmenu('product', 'productCategoriesAll');
+
+        // Check if category has an image and delete it from storage
+        if ($category->image) {
+            $imagePath = 'product_categories_images/' . $category->image;
+            if (Storage::disk('public')->exists($imagePath)) {
+                Storage::disk('public')->delete($imagePath);
+            }
+        }
+
+        // Delete the category record from database
+        $category->delete();
+
+        // Clear cache to update any cached data
+        Cache::flush();
+
+
+        return redirect()->back()->with('success', 'Product Category successfully deleted');
+    }
+
+    /**
+    * Toggle the active status of a product category via AJAX
+    *
+    * @param  \Illuminate\Http\Request  $request
+    * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+    */
+    public function categoryStatus(Request $request)
+    {
+
+     
+        // Find category by ID or fail with 404
+        $category = ProductCategory::findOrFail($request->category);
+
+        // Toggle the active status
+        $category->active = !$category->active;
+
+        // Save the updated status
+        $category->save();
+
+        // Return JSON response for AJAX success
+        return response()->json([
+            'success' => true,
+            'active' => $category->active,
+        ]);
+    }
+
+    /**
+     * Display a paginated list of all products in descending order by creation date.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function productsAll()
+    {
+        // Set active menu and submenu for UI highlighting
+        menuSubmenu('product', 'productsAll');
+
+        // Fetch latest products with pagination (30 per page)
+        $data['products'] = Product::latest()->paginate(30);
+
+        // Return the products list view with data
+        return view('admin.products.productsAll', $data);
+    }
+
+
+
+   /**
+     * Show the form for creating a new product.
+     *
+     * @return \Illuminate\View\View
+     */
+    public function productCreate()
+    {
+        // Set active menu and submenu for UI highlighting
+        menuSubmenu('product', 'productsAll');
+
+        // Fetch latest product categories for category dropdown/select
+        $data['categories'] = ProductCategory::latest()->get();
+
+        // Fetch paginated media items for media selection (20 per page)
+        $data['medias'] = Media::latest()->paginate(20);
+
+        $data['riders'] = \App\Models\User::where('role', 'rider')->where('is_approve', 1)->get();
+
+        $data['units'] = Unit::where('active', true)->get();
+
+        // Return the create product view with categories and medias data
+        return view('admin.products.productCreate', $data);
+    }
+
+
+
+
+    /**
+     * Store a newly created product in database.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function productStore(Request $request)
+    {
+        // Set active menu and submenu for admin UI highlighting
+        menuSubmenu('product', 'productsAll');
+
+
+        // Validate incoming request data
+        $request->validate([
+            'name_en'        => 'required|string',
+            // 'sku'         => 'required',
+            'purchase_price' => 'nullable|numeric',
+            'selling_price'  => 'required|numeric',
+            'slug'           => 'required|string',
+            'unit'           => 'nullable|string',
+            'featured_image' => 'nullable|image',
+            'additional_images.*' => 'nullable|image',
+            'rider_id'       => 'nullable|exists:users,id',
+        ]);
+    
+
+        // Initialize new product instance
+        $product = new Product();
+        $product->name_en = $request->name_en;
+        $product->name_bn = $request->name_bn ?? null;
+        $product->sku = $request->sku ?? null;
+        $product->unit = $request->unit ?? null;
+        $product->stock = $request->stock ? $request->stock : 1;
+
+        // Generate slug, helper function ensures uniqueness if needed
+        $product->slug = getSlug($request->slug, $product, boolval($request->slug));
+
+        // $product->price = $request->price ?? 0.00;
+        $product->selling_price = $request->selling_price ?? 0.00;
+        $product->purchase_price = $request->purchase_price ?? 0.00;
+        $product->discount = $request->discount ?? 0.00;
+
+        // Calculate discount price and final price
+        $product->discount_price = $request->discount ?? 0.00;
+        $product->final_price = $request->selling_price - $product->discount;
+
+        $product->unit = $request->unit;
+        $product->excerpt_en = $request->excerpt_en;
+        $product->excerpt_bn = $request->excerpt_bn ?? null;
+        $product->description_en = $request->description_en;
+        $product->description_bn = $request->description_bn ?? null;
+
+        // Checkbox fields: convert to boolean 1/0
+        $product->feature = $request->feature ? 1 : 0;
+        $product->editor = $request->editor ? 1 : 0;
+        $product->active = $request->active ? 1 : 0;
+        $product->rider_id = $request->rider_id;
+
+        $product->addedby_id = Auth::id();
+
+        // Save initially to get product ID (needed for image filename)
+        $product->save();
+
+        // Handle featured image upload
+        if ($request->hasFile('featured_image')) {
+            $file = $request->file('featured_image');
+            $ext = '.' . $file->getClientOriginalExtension();
+
+            // Filename using product ID and current timestamp
+            $imageName = $product->id . '_' . time() . $ext;
+
+            // Store file in 'public/product_images' disk
+            Storage::disk('public')->put('product_images/' . $imageName, File::get($file));
+
+            // Update product featured_image field and save
+            $product->featured_image = $imageName;
+            $product->save();
+        }
+
+        // Handle additional images upload
+        if ($request->hasFile('additional_images')) {
+            foreach ($request->file('additional_images') as $file) {
+                $ext = '.' . $file->getClientOriginalExtension();
+                $imageName = $product->id . '_' . time() . rand(1, 100) . $ext;
+                Storage::disk('public')->put('product_images/' . $imageName, File::get($file));
+
+                Media::create([
+                    'file_name' => $imageName,
+                    'product_id' => $product->id,
+                    'file_type' => 'image',
+                    'addedby_id' => Auth::id(),
+                ]);
+            }
+        }
+
+        // Cache management: clear and set fresh cache for this product
+        Cache::forget('product');
+        Cache::put("product_{$product->id}", $product, now()->addDays(7));
+
+        // Handle product categories and subcategories relationship
+        if ($request->categories) {
+            foreach ($request->categories as $catId) {
+                // Attach category if not already attached
+                $categoryExists = ProductCat::where('product_category_id', $catId)
+                    ->where('product_id', $product->id)
+                    ->first();
+                if (!$categoryExists) {
+                    $productCat = new ProductCat();
+                    $productCat->product_category_id = $catId;
+                    $productCat->product_id = $product->id;
+                    $productCat->addedby_id = Auth::id();
+                    $productCat->save();
+                }
+
+            }
+        }
+
+
+        return redirect()->route('admin.productsAll')->with('success', 'Product successfully created');
+    }
+
+
+
+
+    /**
+     * Show the form for editing the specified product.
+     *
+     * @param  \App\Models\\Product  $product
+     * @return \Illuminate\View\View
+     */
+    public function productEdit(Product $product)
+    {
+        // Set active menu/submenu for UI highlight
+        menuSubmenu('product', 'productsAll');
+
+        // Prepare data array to pass to view
+        $data = [
+            'product'    => $product,
+            'categories' => ProductCategory::latest()->get(),
+            'medias'     => Media::latest()->paginate(20),
+            'riders'     => \App\Models\User::where('role', 'rider')->where('is_approve', 1)->get(),
+            'units'      => Unit::where('active', true)->get(),
+            // Explode tags string into array or null if no tags
+            'ots'        => $product->tags ? explode(', ', $product->tags) : null,
+        ];
+
+        // Return edit view with prepared data
+        return view('admin.products.productEdit', $data);
+    }
+
+
+
+    /**
+     * Update the specified product in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Product  $product
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function productUpdate(Request $request, Product $product)
+    {
+        // Highlight the 'product' menu and 'productsAll' submenu in the admin panel
+        menuSubmenu('product', 'productsAll');
+
+        // Validate incoming request data
+        $request->validate([
+            'name_en' => 'required|string',
+            // 'price' => 'required|numeric',
+            // 'sku'   => 'required',
+            'purchase_price' => 'nullable|numeric',
+            'selling_price'  => 'required|numeric',
+            'unit' => 'nullable|string',
+            'slug' => 'required|string',
+            'featured_image' => 'nullable|image',
+            'additional_images.*' => 'nullable|image',
+            'rider_id' => 'nullable|exists:users,id',
+        ]);
+
+        // Update product attributes with request data
+        $product->name_en = $request->name_en;
+        $product->name_bn = $request->name_bn ?? null;
+        $product->sku = $request->sku ?? null;
+        $product->unit = $request->unit ?? null;
+        $product->slug = getSlug($request->slug, $product, boolval($request->slug));
+        // $product->price = $request->price ?? 0.00;
+        $product->purchase_price = $request->purchase_price ?? null;
+        $product->selling_price = $request->selling_price ?? null;
+        $product->discount = $request->discount ?? 0.00;
+        $product->discount_price = $request->discount ?? 0.00;
+        $product->final_price = $product->price - $product->discount;
+        $product->excerpt_en = $request->excerpt_en;
+        $product->stock = $request->stock;
+        $product->excerpt_bn = $request->excerpt_bn ?? null;
+        $product->description_en = $request->description_en;
+        $product->description_bn = $request->description_bn ?? null;
+        $product->feature = $request->feature ? 1 : 0;
+        $product->editor = $request->editor ? 1 : 0;
+        $product->active = $request->active ? 1 : 0;
+        $product->rider_id = $request->rider_id;
+
+      
+
+        // Handle featured image upload if a file is provided
+        if ($request->hasFile('featured_image')) {
+            $file = $request->file('featured_image');
+            $ext = '.' . $file->getClientOriginalExtension();
+            $imageName = $product->id . time() . $ext;
+            Storage::disk('public')->put('product_images/' . $imageName, File::get($file));
+            $product->featured_image = $imageName;
+        }
+
+        // Handle additional images upload
+        if ($request->hasFile('additional_images')) {
+            foreach ($request->file('additional_images') as $file) {
+                $ext = '.' . $file->getClientOriginalExtension();
+                $imageName = $product->id . '_' . time() . rand(1, 100) . $ext;
+                Storage::disk('public')->put('product_images/' . $imageName, File::get($file));
+
+                Media::create([
+                    'file_name' => $imageName,
+                    'product_id' => $product->id,
+                    'file_type' => 'image',
+                    'addedby_id' => Auth::id(),
+                ]);
+            }
+        }
+
+        // Save updated product data to the database
+        $product->save();
+
+        // Send notification to the rider if assigned
+        if ($product->rider_id) {
+            $this->createNotification(
+                'New Product Assigned',
+                "You have been assigned a new product: {$product->name_en}. Please check your assigned products.",
+                $product->rider_id,
+                null,
+                'product_assignment'
+            );
+        }
+
+        // Clear and update product cache
+        Cache::forget('product');
+        Cache::put("product_{$product->id}", $product, now()->addDays(30));
+
+        // Detach all existing categories and subcategories relationships
+        $product->categories()->detach();
+
+
+        // Attach new categories and their subcategories from the request
+        if ($request->categories) {
+            foreach ($request->categories as $cat) {
+                $c = ProductCat::where('product_category_id', $cat)->where('product_id', $product->id)->first();
+                if (!$c) {
+                    $c = new ProductCat;
+                    $c->product_category_id = $cat;
+                    $c->product_id = $product->id;
+                    $c->addedby_id = Auth::id();
+                    $c->save();
+                }
+            }
+        }
+
+ 
+        return redirect()->back()->with('success', 'Product successfully updated');
+
+    }
+
+
+
+
+    /**
+     * Delete the specified product from storage.
+     *
+     * @param  \App\Models\Product  $product
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function productDelete(Product $product)
+    {
+        // Highlight the 'productsAll' menu item
+        menuSubmenu('product', 'productsAll');
+
+        // Prepare the path of the old featured image file
+        $old_file = 'product_images/' . $product->featured_image;
+
+        // Check if the file exists in storage and delete it
+        if (Storage::disk('public')->exists($old_file)) {
+            Storage::disk('public')->delete($old_file);
+        }
+
+        // Delete additional images
+        foreach ($product->media as $media) {
+            $old_file = 'product_images/' . $media->file_name;
+            if (Storage::disk('public')->exists($old_file)) {
+                Storage::disk('public')->delete($old_file);
+            }
+            $media->delete();
+        }
+
+        // Delete the product record from the database
+        $product->delete();
+
+        // Clear the cache related to this product
+        Cache::forget("product_{$product->id}");
+
+        return redirect()->back()->with('success', 'Product successfully deleted');
+
+    }
+
+    public function deleteImage(Media $media)
+    {
+        $old_file = 'product_images/' . $media->file_name;
+        if (Storage::disk('public')->exists($old_file)) {
+            Storage::disk('public')->delete($old_file);
+        }
+        $media->delete();
+        return redirect()->back()->with('success', 'Image successfully deleted');
+    }
+
+
+
+    /**
+     * Toggle the active status of a product.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     */
+    public function productStatus(Request $request)
+    {
+
+
+        // প্রোডাক্ট আইডি দিয়ে প্রোডাক্ট খুঁজে পাওয়া
+        $product = Product::find($request->product);
+
+        // যদি প্রোডাক্ট অ্যাক্টিভ না থাকে, তাহলে অ্যাক্টিভ করো, না হলে ইনঅ্যাক্টিভ করো
+        if ($product->active == 0) {
+            $product->active = 1;
+            $active = true;
+        } else {
+            $product->active = 0;
+            $active = false;
+        }
+
+        // পরিবর্তন সংরক্ষণ
+        $product->save();
+
+        // JSON রেসপন্স রিটার্ন করা, স্ট্যাটাস সহ
+        return response()->json([
+            'success' => true,
+            'active' => $active
+        ]);
+    }
+
+    public function toggleApproval(Request $request, Product $product)
+    {
+        // If selling_price is provided, update it and related fields
+        if ($request->has('selling_price')) {
+            $product->selling_price = $request->selling_price;
+            $product->price = $request->selling_price; // Maintain consistency with other parts of the app
+            $product->final_price = $request->selling_price - ($product->discount ?? 0);
+        }
+
+        $product->active = $request->has('active') ? 1 : 0;
+        $product->save();
+
+        return back()->with('success', 'Product approval status updated successfully.');
+    }
+
+
+
+
+
+
+
+
+    /**
+     * Search entities based on type and query.
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function productSearch(Request $request)
+    {
+        $type = $request->type;
+        $q = $request->q;
+
+        if ($type == 'product') {
+            // Search products by name, sku, prices or ID
+            $products = Product::where(function ($qq) use ($q) {
+                $qq->orWhere('name_en', 'like', "%{$q}%")
+                    ->orWhere('name_bn', 'like', "%{$q}%")
+                    ->orWhere('sku', 'like', "%{$q}%")
+                    ->orWhere('selling_price', 'like', "%{$q}%")
+                    ->orWhere('final_price', 'like', "%{$q}%")
+                    ->orWhere('id', 'like', "%{$q}%");
+            })->orderBy('name_en')
+            ->paginate(100);
+
+            $products->appends($request->all());
+
+            $page = View('admin.products.searchData', ['products' => $products])->render();
+
+            return response()->json([
+                'success' => true,
+                'page' => $page,
+            ]);
+        } elseif ($type == 'category') {
+            // Search product categories by name or ID
+            $categories = ProductCategory::where(function ($qq) use ($q) {
+                $qq->orWhere('name_en', 'like', "%{$q}%")
+                ->orWhere('name_bn', 'like', "%{$q}%")
+                ->orWhere('id', 'like', "%{$q}%");
+            })->orderBy('name_en')
+            ->paginate(100);
+
+            $categories->appends($request->all());
+
+            $page = View('admin.productCategories.searchData', ['categories' => $categories])->render();
+
+            return response()->json([
+                'success' => true,
+                'page' => $page,
+            ]);
+        } elseif ($type == 'unit') {
+            // Search units by name or ID
+            $units = Unit::where(function ($qq) use ($q) {
+                $qq->orWhere('name_en', 'like', "%{$q}%")
+                ->orWhere('name_bn', 'like', "%{$q}%")
+                ->orWhere('id', 'like', "%{$q}%");
+            })->orderBy('name_en')
+            ->paginate(100);
+
+            $units->appends($request->all());
+
+            $page = View('admin.units.searchData', ['units' => $units])->render();
+
+            return response()->json([
+                'success' => true,
+                'page' => $page,
+            ]);
+        } else {
+           return response()->json([
+                'success' => false,
+                'message' => 'Invalid search type.',
+            ], 400);
+        }
+    }
+
+
+
+
+
+
+ 
+   
+
+
+
+    /**
+     * Display a list of orders with optional filters (date range, status, mobile, user).
+     *
+     * @param \Illuminate\Http\Request $request
+     * @return \Illuminate\View\View|\Illuminate\Http\Response
+     */
+    public function orderList(Request $request)
+    {
+        // Highlight the correct menu
+        menuSubmenu('order', 'orderList');
+
+        // Get all orders with or without user filter
+        $ordersQuery = Order::when($request->id, function ($q) use ($request) {
+            $q->where('user_id', $request->id);
+        })->where(function ($query) use ($request) {
+
+            // Filter by date range
+            if ($request->filled(['date_from', 'date_to'])) {
+                $from = $request->date_from . ' 00:00:00';
+                $to = $request->date_to . ' 23:59:59';
+                $query->whereBetween('created_at', [$from, $to]);
+            }
+
+            // Filter by order status
+            if ($request->status) {
+                $query->where('order_status', 'like', '%' . $request->status . '%');
+            }
+
+            // Filter by mobile number
+            if ($request->mobile) {
+                $query->where('mobile', 'like', '%' . $request->mobile . '%');
+            }
+
+        })->orderBy('created_at', 'desc'); // Show latest first
+
+        if ($request->download == 'excel') {
+            return Excel::download(new OrdersExport($ordersQuery->get()), 'orders.xlsx');
+        }
+
+        if ($request->download == 'pdf') {
+            $orders = $ordersQuery->get();
+            $pdf = Pdf::loadView('admin.orders.pdf', compact('orders'));
+            return $pdf->stream('orders.pdf');
+        }
+
+        $orders = $ordersQuery->paginate($request->id ? 100 : 30);
+
+       
+        // Show regular order list view
+        return view('admin.orders.orderList', compact('orders'));
+    }
+
+
+
+
+    /**
+     * Display the details of a specific order.
+     *
+     * @param  \App\Models\Order  $order
+     * @return \Illuminate\View\View
+     */
+    public function orderDeatils(Order $order)
+    {
+        // Highlight the order menu and submenu for active navigation
+        menuSubmenu('order', 'orderList');
+
+        $drivers = \App\Models\User::where('role', 'rider')->where('is_approve', 1)->get();
+        $vehicles = \App\Models\Vehicle::where('status', 1)->get();
+
+        // Return the order details view with the selected order
+        return view('admin.orders.orderDeatils', compact('order', 'drivers', 'vehicles'));
+    }
+
+    /**
+     * Assign a driver and vehicle to a specific order.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Order  $order
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function assignDriver(Request $request, Order $order)
+    {
+        $request->validate([
+            'driver_id' => 'required|exists:users,id',
+            'vehicle_id' => 'required|exists:vehicles,id',
+        ]);
+
+        $order->update([
+            'driver_id' => $request->driver_id,
+            'vehicle_id' => $request->vehicle_id,
+            'assigned_at' => now(),
+            'order_status' => 'confirmed', // Optionally set status to confirmed when assigned
+        ]);
+
+        // Send notification to the assigned rider
+        $this->createNotification(
+            'New Order Assigned',
+            "You have been assigned a new order #{$order->id}. Please check your active orders.",
+            $request->driver_id,
+            null,
+            'order_assignment'
+        );
+
+        toast('Rider and Vehicle assigned successfully.', 'success');
+
+        return redirect()->back();
+    }
+
+
+    /**
+     * Update the status of a specific order.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Order  $order
+     * @return \Illuminate\Http\RedirectResponse|\Illuminate\Http\JsonResponse
+     */
+    public function orderStatus(Request $request, Order $order)
+    {
+
+
+        // Prevent further updates if the order is already delivered
+        if ($order->order_status === 'delivered') {
+            return response()->json([
+                'success' => false,
+                'message' => 'This order has already been delivered and cannot be updated.'
+            ]);
+        }
+
+        // Prevent delivery if the payment has not been completed
+        if ($request->order_status === 'delivered' && $order->payment_status !== 'paid') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Order cannot be marked as delivered because the payment is not fully completed.'
+            ]);
+        }
+
+        // Update order status and assign appropriate timestamp
+        switch ($request->order_status) {
+            case 'pending':
+                $order->order_status = 'pending';
+                $order->pending_at = now();
+                break;
+
+            case 'confirmed':
+                $order->order_status = 'confirmed';
+                $order->confirmed_at = now();
+                break;
+
+            case 'delivered':
+                $order->order_status = 'delivered';
+                $order->delivered_at = now();
+                break;
+
+            case 'canceled':
+                $order->order_status = 'canceled';
+                $order->canceled_at = now();
+                break;
+
+            default:
+                // Invalid status provided
+                toast('Invalid order status provided.', 'warning');
+                return redirect()->back();
+        }
+
+        // Save the updated order
+        $order->save();
+
+        // Send notification to the rider if assigned
+        if ($order->driver_id) {
+            $this->createNotification(
+                'Order Status Updated',
+                "Order #{$order->id} status has been updated to {$request->order_status}.",
+                $order->driver_id,
+                null,
+                'order_status_update'
+            );
+        }
+
+        // Notify success
+        toast('Order status updated successfully.', 'success');
+
+        // Redirect to previous page
+        return redirect()->back();
+    }
+
+
+
+
+
+    /**
+     * Store a new payment for the specified order.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Order  $order
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function orderPayment(Request $request, Order $order)
+    {
+
+        // Validate the payment input fields
+        $request->validate([
+            'payment_date'    => 'required|date',
+            'payment_method'  => 'required|string|max:255',
+            'paid_amount'     => 'required|numeric|min:0.01',
+        ]);
+
+        // Initialize new Payment instance and assign values
+        $payment                      = new Payment();
+        $payment->order_id           = $order->id;
+        $payment->user_id            = $order->user_id;
+        $payment->note               = $request->note;
+        $payment->payment_method     = $request->payment_method;
+        $payment->transaction_id     = $request->transaction_id;
+        $payment->previous_due_amount = $order->due();
+        $payment->paid_amount        = $request->paid_amount;
+        $payment->due_amount         = $payment->previous_due_amount - $payment->paid_amount;
+        $payment->payment_date       = $request->payment_date;
+        $payment->payment_status     = 'paid'; // Hardcoded since it's a successful payment
+        $payment->addedby_id         = Auth::id();
+        $payment->save();
+
+        // Update order payment status and paid amount
+        $order->paid_amount += $request->paid_amount;
+        $order->payment_status = $order->due() > 0.99 ? 'partial' : 'paid';
+        $order->editedby_id    = Auth::id(); // Fix: assignment operator should be '='
+        $order->save();
+
+        // Display success notification
+        toast('Order payment successfully added.', 'success');
+
+        // Redirect back to the previous page
+        return redirect()->back();
+    }
+
+
+
+
+
+
+    /**
+     * Update the quantity of a specific order item.
+     * Prevent update if the order is already confirmed or delivered.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse|\Illuminate\Http\RedirectResponse
+     */
+    public function updateQty(Request $request)
+    {
+
+        // Find the order item
+        $item = OrderItem::findOrFail($request->item);
+
+        // Get the parent order
+        $order = $item->order;
+
+        // Prevent update if the order is already confirmed or delivered
+        if (in_array($order->order_status, ['confirmed', 'delivered'])) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Quantity cannot be updated. Order has already been confirmed or delivered.',
+            ]);
+        }
+
+        // Update quantity
+        $item->quantity = $request->new_qty;
+        $item->total_cost = $item->product_price * $item->quantity;
+        $item->save();
+
+        // Update total order amount
+        $order->subtotal = $order->orderItems->sum('total_cost');
+
+        $deliveryCost = $order->delivery_cost ?? 0.00;
+        $order->grand_total = $order->subtotal + $deliveryCost;
+
+        $order->save();
+
+        // Load updated order items
+        $orderItems = $order->orderItems;
+
+        // Return updated partial view for AJAX
+        if ($request->ajax()) {
+            return response()->json([
+                'status' => true,
+                'orderTotalAmount' => $order->grand_total,
+                'message' => 'Item quantity updated successfully!',
+                'view' => view('admin.orders.includes.items', [
+                    'order' => $order,
+                    'orderItems' => $orderItems
+                ])->render(),
+            ]);
+        }else{
+             return response()->json([
+                'status' => false,
+            ]);
+        }
+    }
+
+
+
+    /**
+     * Delete a specific order item and recalculate the order total.
+     * Prevent deletion if order is already confirmed or delivered.
+     * @param  \App\Models\OrderItem  $item
+     */
+    public function orderItemDelete(OrderItem $orderItem)
+    {
+
+        $order = $orderItem->order;
+
+        if (in_array($order->order_status, ['confirmed', 'delivered'])) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Cannot delete item. The order is already confirmed or delivered.',
+            ]);
+        }
+
+        $orderItem->delete();
+
+        $order->subtotal = $order->orderItems()->sum('total_cost');
+
+        $deliveryCost = $order->delivery_cost ?? 0.00;
+        $order->grand_total = $order->subtotal + $deliveryCost;
+
+        $order->save();
+
+       return redirect()->back();
+    }
+
+
+   
+
+    /**
+     * Print order invoice view.
+     * 
+     * @param  \App\Models\Order  $order
+     * @return \Illuminate\View\View
+     */
+    public function orderPrint(Order $order)
+    {
+        $items = $order->orderItems()->get();
+
+        return view('admin.orders.orderPrint', compact('order', 'items'));
+    }
+
+   
+
+}
+
+
+product controller logic 
+
+
+************************************
+
+api product controller 
+---------------------------
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Http\Resources\ProductResource; // Import ProductResource
+use App\Http\Resources\ProductOverviewResource; // Import ProductOverviewResource
+use App\Http\Resources\ProductWithoutDescriptionResource; // Import ProductWithoutDescriptionResource
+use App\Models\Product;
+use App\Models\ProductCategory;
+use App\Models\ProductCat;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+
+class ProductController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
+    public function index(Request $request)
+    {
+        $query = Product::with(['addedBy', 'categories']);
+
+        if ($request->has('seller_id')) {
+            $query->where('seller_id', $request->seller_id);
+        }
+
+        $products = $query->paginate(10);
+        return ProductResource::collection($products);
+    }
+
+    /**
+     * Display products for the currently authenticated seller.
+     *
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
+    public function sellerProducts()
+    {
+        $products = Product::with(['addedBy', 'categories'])
+            ->where('seller_id', Auth::id())
+            ->latest()
+            ->paginate(10);
+
+        return ProductResource::collection($products);
+    }
+
+    /**
+     * Update a product specifically for a seller.
+     */
+    public function sellerUpdate(Request $request, Product $product)
+    {
+        // Log::info('Seller Product Update Request Data:', $request->all());
+        // Log::info('Ownership Check:', [
+        //     'auth_id' => Auth::id(),
+        //     'product_seller_id' => $product->seller_id,
+        //     'is_match' => (int)$product->seller_id === (int)Auth::id()
+        // ]);
+
+        if ((int)$product->seller_id !== (int)Auth::id()) {
+            return response()->json([
+                'message' => 'Unauthorized. You do not own this product.',
+                'debug' => [
+                    'your_id' => Auth::id(),
+                    'owner_id' => $product->seller_id
+                ]
+            ], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name_en' => 'sometimes|required|string|max:255',
+            'purchase_price' => 'sometimes|required|numeric|min:0',
+            'stock' => 'sometimes|required|integer|min:0',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'category_id' => 'nullable',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $product->update($request->except(['categories', 'category_id', 'featured_image']));
+
+        if ($request->hasFile('featured_image')) {
+            if ($product->featured_image) {
+                Storage::disk('public')->delete('product_images/' . $product->featured_image);
+            }
+            $file = $request->file('featured_image');
+            $imageName = $product->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            Storage::disk('public')->put('product_images/' . $imageName, File::get($file));
+            $product->featured_image = $imageName;
+            $product->save();
+        }
+
+        $catId = $request->category_id;
+        if ($catId) {
+            $product->categories()->detach();
+            ProductCat::create([
+                'product_id' => $product->id,
+                'product_category_id' => $catId,
+                'addedby_id' => Auth::id(),
+            ]);
+        }
+
+        return new ProductResource($product->load(['addedBy', 'categories']));
+    }
+
+    /**
+     * Display a listing of all products without descriptions.
+     *
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection
+     */
+    public function indexWithoutDescription()
+    {
+        $products = Product::with(['addedBy', 'categories'])->paginate(10); // Fetch all products with eager loading
+        return ProductWithoutDescriptionResource::collection($products);
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \App\Http\Resources\ProductResource|\Illuminate\Http\JsonResponse
+     */
+    public function store(Request $request)
+    {
+
+        $validator = Validator::make($request->all(), [
+            'name_en' => 'required|string|max:255',
+            'price' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'categories' => 'nullable', 
+            'category_id' => 'nullable',
+            'seller_id' => 'nullable|exists:users,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $product = new Product();
+        $product->name_en = $request->name_en;
+        $product->name_bn = $request->name_bn;
+        $product->purchase_price = $request->price;
+        $product->stock = $request->stock ?? 1;
+        $product->discount = $request->discount ?? 0;
+        $product->discount_price = $request->discount ?? 0;
+        $product->final_price = $request->price - ($request->discount ?? 0);
+        $product->slug = getSlug($request->slug ?? $request->name_en, $product);
+        $product->excerpt_en = $request->excerpt_en;
+        $product->description_en = $request->description_en;
+        $product->seller_id = $request->seller_id ?? Auth::id();
+        $product->addedby_id = Auth::id();
+
+        $product->save();
+
+        if ($request->hasFile('featured_image')) {
+            $file = $request->file('featured_image');
+            $imageName = $product->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            Storage::disk('public')->put('product_images/' . $imageName, File::get($file));
+            $product->featured_image = $imageName;
+            $product->save();
+        }
+
+        $catInput = $request->categories ?? $request->category_id;
+        if ($catInput) {
+            $categories = is_array($catInput) ? $catInput : explode(',', $catInput);
+            foreach ($categories as $catId) {
+                if (!empty($catId)) {
+                    ProductCat::create([
+                        'product_id' => $product->id,
+                        'product_category_id' => trim($catId),
+                        'addedby_id' => Auth::id(),
+                    ]);
+                }
+            }
+        }
+
+        return new ProductResource($product->load(['addedBy', 'categories']));
+    }
+
+
+public function bulkStore(Request $request)
+{
+    $products = $request->products;
+
+    if (!is_array($products) || empty($products)) {
+        return response()->json([
+            'message' => 'Products array is required'
+        ], 422);
+    }
+
+    $createdProducts = [];
+
+    foreach ($products as $index => $item) {
+
+        $validator = Validator::make($item, [
+            'name_en' => 'required|string|max:255',
+            'selling_price' => 'required|numeric',
+            'stock' => 'nullable|integer|min:0',
+            'seller_id' => 'nullable|exists:users,id',
+        ]);
+
+        if ($validator->fails()) {
+            continue;
+        }
+
+        $product = new Product();
+        $product->name_en = $item['name_en'];
+        $product->name_bn = $item['name_bn'] ?? null;
+        $product->sku = $item['sku'] ?? null;
+        $product->stock = $item['stock'] ?? 1;
+
+        $product->slug = getSlug($item['slug'] ?? $item['name_en'], $product);
+
+        $product->selling_price = $item['selling_price'] ?? 0;
+        $product->purchase_price = $item['purchase_price'] ?? 0;
+        $product->discount = $item['discount'] ?? 0;
+
+        $product->discount_price = $item['discount'] ?? 0;
+        $product->final_price = $product->selling_price - $product->discount;
+
+        $product->unit = $item['unit'] ?? null;
+
+        $product->excerpt_en = $item['excerpt_en'] ?? null;
+        $product->description_en = $item['description_en'] ?? null;
+
+        $product->feature = $item['feature'] ?? 0;
+        $product->editor = $item['editor'] ?? 0;
+        $product->active = $item['active'] ?? 1;
+
+        $product->rider_id = $item['rider_id'] ?? null;
+        $product->addedby_id = Auth::id();
+
+        $product->save();
+
+        /*
+        |---------------------------------------
+        | FEATURED IMAGE UPLOAD
+        |---------------------------------------
+        */
+        if ($request->hasFile("products.$index.featured_image")) {
+
+            $file = $request->file("products.$index.featured_image");
+            $ext = '.' . $file->getClientOriginalExtension();
+
+            $imageName = $product->id . '_' . time() . $ext;
+
+            Storage::disk('public')->put(
+                'product_images/' . $imageName,
+                File::get($file)
+            );
+
+            $product->featured_image = $imageName;
+            $product->save();
+        }
+
+        /*
+        |---------------------------------------
+        | ADDITIONAL IMAGES
+        |---------------------------------------
+        */
+        if ($request->hasFile("products.$index.additional_images")) {
+
+            foreach ($request->file("products.$index.additional_images") as $file) {
+
+                $ext = '.' . $file->getClientOriginalExtension();
+                $imageName = $product->id . '_' . time() . rand(1,100) . $ext;
+
+                Storage::disk('public')->put(
+                    'product_images/' . $imageName,
+                    File::get($file)
+                );
+
+                Media::create([
+                    'file_name' => $imageName,
+                    'product_id' => $product->id,
+                    'file_type' => 'image',
+                    'addedby_id' => Auth::id(),
+                ]);
+            }
+        }
+
+        /*
+        |---------------------------------------
+        | CATEGORY INSERT
+        |---------------------------------------
+        */
+        $catInput = $item['categories'] ?? $item['category_id'] ?? null;
+
+        if ($catInput) {
+
+            $categories = is_array($catInput) ? $catInput : explode(',', $catInput);
+
+            foreach ($categories as $catId) {
+
+                if (!empty($catId)) {
+
+                    ProductCat::create([
+                        'product_id' => $product->id,
+                        'product_category_id' => trim($catId),
+                        'addedby_id' => Auth::id(),
+                    ]);
+                }
+            }
+        }
+
+        $createdProducts[] = $product;
+    }
+
+    return ProductResource::collection(
+        Product::whereIn('id', collect($createdProducts)->pluck('id'))
+        ->with(['addedBy','categories'])
+        ->get()
+    );
+}
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  \App\Models\Product  $product
+     * @return \App\Http\Resources\ProductResource
+     */
+    public function show(Product $product)
+    {
+        $product->load(['addedBy', 'categories']); // Eager load relationships for a single product
+        return new ProductResource($product);
+    }
+
+    /**
+     * Display a minimal overview of the specified product.
+     *
+     * @param  \App\Models\Product  $product
+     * @return \App\Http\Resources\ProductOverviewResource
+     */
+    public function overview(Product $product)
+    {
+        return new ProductOverviewResource($product);
+    }
+
+    /**
+     * Display product details without descriptions.
+     *
+     * @param  \App\Models\Product  $product
+     * @return \App\Http\Resources\ProductWithoutDescriptionResource
+     */
+    public function withoutDescription(Product $product)
+    {
+        return new ProductWithoutDescriptionResource($product);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Product  $product
+     * @return \App\Http\Resources\ProductResource|\Illuminate\Http\JsonResponse
+     */
+    public function update(Request $request, Product $product)
+    {
+        Log::info('Product Update Request Data:', $request->all());
+
+        if (!Auth::check()) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        if (Auth::user()->role === 'seller' && $product->seller_id !== Auth::id()) {
+            return response()->json(['message' => 'Unauthorized. You can only modify your own products.'], 403);
+        }
+
+        $validator = Validator::make($request->all(), [
+            'name_en' => 'sometimes|required|string|max:255',
+            'price' => 'sometimes|required|numeric|min:0',
+            'stock' => 'sometimes|required|integer|min:0',
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'categories' => 'nullable',
+            'category_id' => 'nullable',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $product->update($request->except(['categories', 'category_id', 'featured_image']));
+
+        if ($request->hasFile('featured_image')) {
+            // Delete old image if exists
+            if ($product->featured_image) {
+                Storage::disk('public')->delete('product_images/' . $product->featured_image);
+            }
+
+            $file = $request->file('featured_image');
+            $imageName = $product->id . '_' . time() . '.' . $file->getClientOriginalExtension();
+            Storage::disk('public')->put('product_images/' . $imageName, File::get($file));
+            $product->featured_image = $imageName;
+            $product->save();
+        }
+
+        $catInput = $request->categories ?? $request->category_id;
+        if ($catInput) {
+            $product->categories()->detach();
+            $categories = is_array($catInput) ? $catInput : explode(',', $catInput);
+            foreach ($categories as $catId) {
+                if (!empty($catId)) {
+                    ProductCat::create([
+                        'product_id' => $product->id,
+                        'product_category_id' => trim($catId),
+                        'addedby_id' => Auth::id(),
+                    ]);
+                }
+            }
+        }
+
+        return new ProductResource($product->load(['addedBy', 'categories']));
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  \App\Models\Product  $product
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroy(Product $product)
+    {
+        $product->delete();
+
+        return response()->json(['message' => 'Product deleted successfully'], 204);
+    }
+
+    /**
+     * Get products by slug (either category slug or product slug).
+     *
+     * @param  string  $slug
+     * @return \Illuminate\Http\Resources\Json\AnonymousResourceCollection|\App\Http\Resources\ProductResource|\Illuminate\Http\JsonResponse
+     */
+    public function getProductsBySlug(string $slug, Request $request)
+    {
+        $resourceType = $request->query('resource_type');
+
+        // Determine which resource to use based on the resource_type query parameter
+        $productResource = ProductResource::class;
+        if ($resourceType === 'overview') {
+            $productResource = ProductOverviewResource::class;
+        } elseif ($resourceType === 'without_description') {
+            $productResource = ProductWithoutDescriptionResource::class;
+        }
+
+        // Try to find products by product category slug
+        $productCategory = ProductCategory::where('slug', $slug)->first();
+
+        if ($productCategory) {
+            $products = $productCategory->products()->with(['addedBy', 'categories'])->paginate(10);
+            return $productResource::collection($products);
+        }
+
+        // If no product category found, try to find a single product by its slug
+        $product = Product::where('slug', $slug)->with(['addedBy', 'categories'])->first();
+
+        if ($product) {
+            return new $productResource($product);
+        }
+
+        return response()->json(['message' => 'No products or categories found for the given slug.'], 404);
+    }
+}
+
+
+
+
+<?php
+
+use App\Http\Controllers\Api\AuthController as ApiAuthController;
+use App\Http\Controllers\Auth\AuthController; // Import the newly created AuthController
+use App\Http\Controllers\Api\ProductController; // Import ProductController
+use App\Http\Controllers\Api\ProductCategoryController; // Import ProductCategoryController
+use App\Http\Controllers\Api\CartController; // Import CartController
+use App\Http\Controllers\Api\OrderController; // Import OrderController
+use App\Http\Controllers\ChatController; // Import OrderController
+use App\Http\Controllers\Api\UserController; // Import UserController
+use App\Http\Controllers\Api\ContactFormController; // Import ContactFormController
+use App\Http\Controllers\Api\SellerDashboardController; // Import SellerDashboardController
+use App\Http\Controllers\Api\RiderDashboardController; // Import RiderDashboardController
+use App\Http\Controllers\NotificationController; // Import RiderDashboardController
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| is assigned the "api" middleware group. Enjoy building your API!
+|
+*/
+
+Route::post('/login', [ApiAuthController::class, 'login']);
+Route::post('/register', [ApiAuthController::class, 'register']);
+
+// Password Reset Routes
+Route::post('/forgot-password', [ApiAuthController::class, 'forgotPassword'])->name('password.email');
+Route::post('/reset-password', [ApiAuthController::class, 'resetPassword'])->name('password.reset');
+
+// Public API routes for products
+Route::get('products', [ProductController::class, 'index']);
+Route::get('products/{product}', [ProductController::class, 'show']);
+Route::get('products/{product}/overview', [ProductController::class, 'overview']);
+Route::get('products/{product}/no-description', [ProductController::class, 'withoutDescription']);
+Route::get('products-no-description', [ProductController::class, 'indexWithoutDescription']);
+Route::get('products/by-slug/{slug}', [ProductController::class, 'getProductsBySlug']);
+Route::apiResource('product-categories', ProductCategoryController::class);
+
+// Cart routes accessible to both authenticated and guest users
+Route::apiResource('cart', CartController::class)->only(['index', 'store', 'destroy']);
+Route::post('orders', [OrderController::class, 'store']);
+
+// API route for contact form submission
+Route::post('/contact', [ContactFormController::class, 'store']);
+
+// notification route
+Route::get('/notifications', [NotificationController::class, 'index']);
+Route::get('/notifications/ip', [NotificationController::class, 'ipNotifications']);
+Route::post('/notifications/read/{id}', [NotificationController::class, 'markAsRead']);
+
+Route::middleware('auth:sanctum')->group(function () {
+    Route::post('/logout', [ApiAuthController::class, 'logout']);
+    Route::get('/user', [ApiAuthController::class, 'me']);
+    // 
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead']);
+
+    Route::apiResource('products', ProductController::class)->except(['index', 'show']);
+    Route::post('products/bulk-store', [ProductController::class, 'bulkStore']);
+    // Authenticated API routes for Cart and Orders
+    // Route::apiResource('cart', CartController::class)->only(['index', 'store', 'destroy']);
+    Route::apiResource('orders', OrderController::class)->except(['store']);
+    Route::get('order-list', [OrderController::class, 'simpleList']);
+    Route::apiResource('users', UserController::class); // New Route for User management
+    Route::patch('/user/profile', [UserController::class, 'updateMyProfile']);
+    Route::patch('/user/password', [UserController::class, 'changePassword']);
+
+    // Dashboard routes for Seller and Rider
+    Route::get('/seller/dashboard', [SellerDashboardController::class, 'index']);
+    Route::get('/seller/products', [ProductController::class, 'sellerProducts']);
+    Route::get('/seller/orders', [OrderController::class, 'sellerOrders']);
+    Route::patch('/seller/products/{product}', [ProductController::class, 'sellerUpdate']);
+    Route::get('/rider/dashboard', [RiderDashboardController::class, 'index']);
+    Route::get('/rider/assigned-products', [RiderDashboardController::class, 'assignedProducts']);
+    Route::get('/rider/active-orders', [RiderDashboardController::class, 'activeOrders']);
+    Route::get('/rider/orders/{order}', [RiderDashboardController::class, 'showOrder']);
+    Route::post('/rider/orders/{order}/update-status', [RiderDashboardController::class, 'updateOrderStatus']);
+
+
+    // routes/api.php
+    Route::get('/test-relationships', function() {
+        $user = \App\Models\User::first();
+        
+        // Test 1: Check if user has conversations
+        $conversations = $user->conversations;
+        // dd('User conversations:', $conversations);
+        
+        // Test 2: Create a conversation
+        $conversation = \App\Models\Conversation::create([
+            'type' => 'private',
+            'created_by' => $user->id
+        ]);
+        
+        // Test 3: Add participants
+        $participant = \App\Models\User::where('id', '!=', $user->id)->first();
+        
+        $cp = \App\Models\ConversationParticipant::create([
+            'conversation_id' => $conversation->id,
+            'user_id' => $participant->id,
+            'is_admin' => false
+        ]);
+        
+        dd('Created participant:', $cp);
+    });
+
+        // Chat Routes
+    Route::prefix('chat')->group(function () {
+
+
+        Route::post('send', [ChatController::class, 'send']);
+        Route::get('messages', [ChatController::class, 'messages']);
+        Route::post('read', [ChatController::class, 'markAsRead']);
+        // Conversations
+        Route::get('conversations', [ChatController::class, 'getConversations']);
+        Route::post('conversations', [ChatController::class, 'createConversation']);
+        Route::get('conversations/{conversation}', [ChatController::class, 'getConversation']);
+        Route::post('conversations/{conversation}/add-participant', [ChatController::class, 'addParticipant']);
+        Route::delete('conversations/{conversation}/remove-participant/{user}', [ChatController::class, 'removeParticipant']);
+        
+        // Messages
+        Route::get('conversations/{conversation}/messages', [ChatController::class, 'getMessages']);
+        Route::post('conversations/{conversation}/messages', [ChatController::class, 'sendMessage']);
+        Route::post('messages/{message}/read', [ChatController::class, 'markAsRead']);
+        Route::delete('messages/{message}', [ChatController::class, 'deleteMessage']);
+        
+        // Users
+        Route::get('users/search', [ChatController::class, 'searchUsers']);
+        Route::get('users/{user}/conversation', [ChatController::class, 'getOrCreatePrivateConversation']);
+    });
+});
+
+
+
+
+
+
+umit api 
+Route::get('units', [UnitController::class, 'index']);
+
+
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use App\Models\Unit;
+use Illuminate\Http\Request;
+
+class UnitController extends Controller
+{
+    /**
+     * Display a listing of active units.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function index(Request $request)
+    {
+        $units = Unit::where('active', 1)
+            ->select('id', 'name_en', 'name_bn')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $units,
+            'message' => 'Units retrieved successfully'
+        ]);
+    }
+}
+
+
+unit logic 

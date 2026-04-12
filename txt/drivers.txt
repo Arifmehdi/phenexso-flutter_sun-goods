@@ -1,0 +1,430 @@
+rider panel all api 
+------------------------
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/rider/dashboard', [RiderDashboardController::class, 'index']);
+    Route::get('/rider/assigned-products', [RiderDashboardController::class, 'assignedProducts']);
+    Route::get('/rider/active-orders', [RiderDashboardController::class, 'activeOrders']);
+    Route::get('/rider/orders/{order}', [RiderDashboardController::class, 'showOrder']);
+    Route::post('/rider/orders/{order}/update-status', [RiderDashboardController::class, 'updateOrderStatus']);
+
+
+
+order model 
+---------------
+
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use App\Models\User;
+use App\Models\Driver; // Import Driver model
+
+class Order extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'user_id',
+        'name',
+        'mobile',
+        'email',
+        'address_title',
+        'subtotal',
+        'grand_total',
+        'payment_method',
+        'payment_status',
+        'payment_gateway',
+        'delivery_cost',
+        'addedby_id',
+        'editedby_id',
+        'order_note',
+        'payment_trx_id',
+        'seller_id',
+        'rider_id',
+        'driver_id',
+        'vehicle_id',
+        'assigned_at',
+        'pending_at',
+        'confirmed_at',
+        'ready_to_ship_at',
+        'shiped_at',
+        'delivered_at',
+        'canceled_at',
+        'order_status',
+    ];
+
+    protected $casts = [
+        'assigned_at' => 'datetime',
+        'pending_at' => 'datetime',
+        'confirmed_at' => 'datetime',
+        'ready_to_ship_at' => 'datetime',
+        'shiped_at' => 'datetime',
+        'delivered_at' => 'datetime',
+        'canceled_at' => 'datetime',
+    ];
+
+    public function orderItems()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    // public function driver()
+    // {
+    //     return $this->belongsTo(Driver::class);
+    // }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class, 'order_id');
+       
+    }
+
+    public function due()
+    {
+        return $this->grand_total - $this->payments()->sum('paid_amount');
+       
+    }
+
+    public function paid()
+    {
+        return  $this->payments()->sum('paid_amount');
+    }
+
+    public function driver()
+    {
+        return $this->belongsTo(User::class, 'driver_id');
+    }
+
+    public function vehicle()
+    {
+        return $this->belongsTo(Vehicle::class);
+    }
+
+}
+
+
+order item model 
+---------------------
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+
+class OrderItem extends Model
+{
+    use HasFactory;
+
+    protected $fillable = [
+        'order_id', 'user_id', 'product_id', 'quantity', 'product_price', 'product_name', 'total_cost', 'addedby_id'
+    ];
+
+    public function order()
+    {
+        return $this->belongsTo(Order::class, 'order_id');
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class, 'product_id');
+    }
+}
+
+
+
+api / riderdashboard controller 
+----------------------------------
+<?php
+
+namespace App\Http\Controllers\Api;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Vehicle; // Import Vehicle model
+use App\Models\VehicleAssignment; // Import VehicleAssignment model
+use App\Models\Order; // Import Order model
+use App\Models\Driver; // Import Driver model
+use App\Models\Product; // Import Product model
+use App\Http\Resources\OrderResource; // Import OrderResource
+use Illuminate\Support\Facades\Response;
+
+class RiderDashboardController extends Controller
+{
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        // Check if the user has the 'rider' role
+        if ($user->role !== 'rider') {
+            return Response::json(['message' => 'Unauthorized: User is not a rider.'], 403);
+        }
+
+        // Fetch assigned vehicle details
+        $vehicle = $user->vehicle ? $user->vehicle : null;
+
+        // Fetch orders currently assigned to this rider
+        $ordersQuery = Order::where('driver_id', $user->id)
+                            ->with(['orderItems.product', 'user'])
+                            ->orderBy('created_at', 'desc');
+        
+        $assignedOrders = (clone $ordersQuery)->get();
+
+        // Fetch products currently assigned to this rider
+        $assignedProducts = Product::where('rider_id', $user->id)
+                                    ->with('media')
+                                    ->latest()
+                                    ->get();
+
+        // Prepare Statistics
+        $stats = [
+            'total_orders' => $assignedOrders->count(),
+            'pending_orders' => $assignedOrders->where('order_status', 'pending')->count(),
+            'confirmed_orders' => $assignedOrders->where('order_status', 'confirmed')->count(),
+            'shipped_orders' => $assignedOrders->where('order_status', 'shipped')->count(),
+            'delivered_orders' => $assignedOrders->where('order_status', 'delivered')->count(),
+            'total_products' => $assignedProducts->count(),
+        ];
+
+        // Format Rider Data for API
+        $riderData = [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'mobile' => $user->mobile,
+            'license_no' => $user->license_no,
+            'address' => $user->address,
+            'image' => $user->image ? asset('storage/product_images/' . $user->image) : asset('img/profile.jpg'),
+            'status' => $user->is_approve ? 'Active' : 'Pending Approval',
+        ];
+
+        return Response::json([
+            'success' => true,
+            'message' => 'Rider dashboard data retrieved successfully.',
+            'data' => [
+                'rider' => $riderData,
+                'stats' => $stats,
+                'assigned_vehicle' => $vehicle,
+                'recent_orders' => OrderResource::collection($assignedOrders->take(10)), // Use OrderResource
+                'assigned_products' => $assignedProducts->take(10), // Limit products too
+            ]
+        ]);
+    }
+
+    public function assignedProducts(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'rider') {
+            return Response::json(['message' => 'Unauthorized: User is not a rider.'], 403);
+        }
+
+        $products = Product::where('rider_id', $user->id)
+                            ->with(['categories', 'media'])
+                            ->latest()
+                            ->paginate(20);
+
+        return Response::json([
+            'success' => true,
+            'message' => 'Assigned products retrieved successfully.',
+            'data' => $products
+        ]);
+    }
+
+    /**
+     * Get the active orders for the rider.
+     */
+    public function activeOrders(Request $request)
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'rider') {
+            return Response::json(['message' => 'Unauthorized: User is not a rider.'], 403);
+        }
+
+        $activeOrders = Order::where('driver_id', $user->id)
+            ->whereNotIn('order_status', ['delivered', 'canceled'])
+            ->with(['orderItems.product', 'user'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return Response::json([
+            'success' => true,
+            'message' => 'Active orders retrieved successfully.',
+            'data' => OrderResource::collection($activeOrders)
+        ]);
+    }
+
+    /**
+     * Show details of a specific order assigned to the rider.
+     */
+    public function showOrder(Request $request, $id)
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'rider') {
+            return Response::json(['message' => 'Unauthorized: User is not a rider.'], 403);
+        }
+
+        $order = Order::where('driver_id', $user->id)
+            ->with(['orderItems.product', 'user', 'vehicle'])
+            ->find($id);
+
+        if (!$order) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Order not found or not assigned to you.'
+            ], 404);
+        }
+
+        return Response::json([
+            'success' => true,
+            'message' => 'Order details retrieved successfully.',
+            'data' => new OrderResource($order)
+        ]);
+    }
+
+    /**
+     * Update the status of an order assigned to the rider.
+     */
+    public function updateOrderStatus(Request $request, $id)
+    {
+        $user = $request->user();
+
+        if ($user->role !== 'rider') {
+            return Response::json(['message' => 'Unauthorized: User is not a rider.'], 403);
+        }
+
+        $request->validate([
+            'status' => 'required|in:shipped,delivered,canceled'
+        ]);
+
+        $order = Order::where('driver_id', $user->id)->find($id);
+
+        if (!$order) {
+            return Response::json([
+                'success' => false,
+                'message' => 'Order not found or not assigned to you.'
+            ], 404);
+        }
+
+        $status = $request->status;
+        $updateData = ['order_status' => $status];
+
+        if ($status === 'shipped') {
+            $updateData['shiped_at'] = now();
+        } elseif ($status === 'delivered') {
+            $updateData['delivered_at'] = now();
+            $updateData['payment_status'] = 'paid'; // Assuming cash on delivery or similar
+        } elseif ($status === 'canceled') {
+            $updateData['canceled_at'] = now();
+        }
+
+        $order->update($updateData);
+
+        return Response::json([
+            'success' => true,
+            'message' => "Order status updated to {$status} successfully.",
+            'data' => new OrderResource($order->load(['orderItems.product', 'user']))
+        ]);
+    }
+}
+
+
+
+
+orderResource php 
+----------------------
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class OrderResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray($request): array
+    {
+        return [
+            'id' => $this->id,
+            'user_id' => $this->user_id,
+            'name' => $this->name,
+            'mobile' => $this->mobile,
+            'email' => $this->email,
+            'address_title' => $this->address_title,
+            'subtotal' => $this->subtotal,
+            'grand_total' => $this->grand_total,
+            'payment_method' => $this->payment_method,
+            'payment_status' => $this->payment_status,
+            'payment_gateway' => $this->payment_gateway,
+            'delivery_cost' => $this->delivery_cost,
+            'order_note' => $this->order_note,
+            'payment_trx_id' => $this->payment_trx_id,
+            'order_status' => $this->order_status,
+            'pending_at' => $this->pending_at,
+            'confirmed_at' => $this->confirmed_at,
+            'ready_to_ship_at' => $this->ready_to_ship_at,
+            'shiped_at' => $this->shiped_at,
+            'delivered_at' => $this->delivered_at,
+            'canceled_at' => $this->canceled_at,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'user' => new UserResource($this->whenLoaded('user')),
+            'order_items' => OrderItemResource::collection($this->whenLoaded('orderItems')),
+            'payments' => $this->whenLoaded('payments'), // Assuming Payment model doesn't need a specific resource for now
+            'due_amount' => $this->due(),
+            'paid_amount' => $this->paid(),
+        ];
+    }
+}
+
+
+
+
+orderItemResource logic 
+--------------------------
+<?php
+
+namespace App\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class OrderItemResource extends JsonResource
+{
+    /**
+     * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray($request): array
+    {
+        return [
+            'id' => $this->id,
+            'product_id' => $this->product_id,
+            'quantity' => $this->quantity,
+            'product_price' => $this->product_price,
+            'product_name' => $this->product_name,
+            'total_cost' => $this->total_cost,
+            'addedby_id' => $this->addedby_id,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'product' => new ProductOverviewResource($this->whenLoaded('product')),
+        ];
+    }
+}
+
+
