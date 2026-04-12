@@ -23,7 +23,7 @@ class CategoryProvider with ChangeNotifier {
     try {
       final response = await http.get(
         // Assuming an API endpoint for categories based on table.txt
-        Uri.parse('https://hublibd.com/api/product-categories'),
+        Uri.parse('https://test.musafirinternational.com/api/product-categories'),
       );
 
       if (response.statusCode == 200) {

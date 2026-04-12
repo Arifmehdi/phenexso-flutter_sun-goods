@@ -60,7 +60,7 @@ class Product {
       stock: _safeInt(json['stock']),
       imageUrls: [
         (json['featured_image'] != null
-            ? 'https://hublibd.com/uslive/pnism/${json['featured_image']}'
+            ? 'https://test.musafirinternational.com/uslive/pnism/${json['featured_image']}'
             : 'assets/images/placeholder.png'),
       ],
       category: categoryName,
@@ -81,7 +81,7 @@ class Product {
       'price': purchasePrice,
       'stock': stock,
       'featured_image': imageUrls.isNotEmpty
-          ? imageUrls[0].replaceAll('https://hublibd.com/uploads/product/', '')
+          ? imageUrls[0].replaceAll('https://test.musafirinternational.com/uploads/product/', '')
           : null,
       'category': category,
       'average_rating': rating,

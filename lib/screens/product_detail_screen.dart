@@ -407,7 +407,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               _buildIcon(Icons.share, () {
                 Share.share(
                   'Check out this product: ${widget.product.name} - \$${widget.product.price.toStringAsFixed(2)} '
-                  'Link: https://hublibd.com/products/${widget.product.id}',
+                  'Link: https://test.musafirinternational.com/products/${widget.product.id}',
                 );
               }),
               _buildIcon(Icons.shopping_cart, () {

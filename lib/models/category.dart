@@ -26,7 +26,7 @@ class Category {
       imageUrl:
           (json['image'] != null &&
               json['image'].isNotEmpty) // Use 'image' as per table.txt
-          ? 'https://hublibd.com/uslive/pnism/${json['image']}' // Assuming similar image path prefix as products
+          ? 'https://test.musafirinternational.com/uslive/pnism/${json['image']}' // Assuming similar image path prefix as products
           : null,
     );
   }

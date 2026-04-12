@@ -1,4 +1,4 @@
-package com.hubli.app
+package com.sungoods.app
 
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
