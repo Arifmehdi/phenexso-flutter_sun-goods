@@ -127,7 +127,7 @@ class _RiderOrderDetailScreenState extends State<RiderOrderDetailScreen> {
                 pw.Text(widget.order.orderNote!),
               ],
               pw.SizedBox(height: 40),
-              pw.Center(child: pw.Text('Thank you for shopping with Hubli!')),
+              pw.Center(child: pw.Text('Thank you for shopping with Sungoods!')),
             ],
           );
         },
@@ -136,7 +136,7 @@ class _RiderOrderDetailScreenState extends State<RiderOrderDetailScreen> {
 
     await Printing.layoutPdf(
       onLayout: (PdfPageFormat format) async => pdf.save(),
-      name: 'Hubli_Invoice_${widget.order.id}',
+      name: 'Sungoods_Invoice_${widget.order.id}',
     );
   }
 

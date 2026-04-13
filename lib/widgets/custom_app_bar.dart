@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sungoods/providers/notification_provider.dart';
+import 'package:sungoods/utils/colors.dart';
 import 'package:provider/provider.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
@@ -135,7 +136,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(8.0),
-                      border: Border.all(color: const Color(0xFF008739)),
+                      border: Border.all(color: appColorsPrimary),
                     ),
                     child: TextField(
                       controller: searchController,
@@ -147,7 +148,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                         border: InputBorder.none,
                         suffixIcon: Container(
                           decoration: const BoxDecoration(
-                            color: Color(0xFF008739),
+                            color: appColorsPrimary,
                             borderRadius: BorderRadius.only(
                               topRight: Radius.circular(8.0),
                               bottomRight: Radius.circular(8.0),
@@ -163,7 +164,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
                         ),
                         prefixIcon: searchController?.text.isNotEmpty == true // Null check
                             ? IconButton(
-                                icon: const Icon(Icons.clear, color: Color(0xFF008739)),
+                                icon: const Icon(Icons.clear, color: appColorsPrimary),
                                 onPressed: () {
                                   searchController?.clear(); // Null check
                                   onSearch?.call(); // Null check

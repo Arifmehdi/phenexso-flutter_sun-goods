@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:sungoods/models/product.dart';
 import 'package:intl/intl.dart';
 import 'package:sungoods/widgets/custom_app_bar.dart';
+import 'package:sungoods/utils/colors.dart';
 import 'dart:async'; // Import for Timer
 import 'package:provider/provider.dart';
 import 'package:sungoods/providers/product_provider.dart'; // Import ProductProvider
@@ -404,7 +405,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                                       style: const TextStyle(
                                                         fontWeight: FontWeight.bold,
                                                         fontSize: 14.0,
-                                                        color: Color(0xFF008739),
+                                                        color: appColorsPrimary,
                                                       ),
                                                     ),
                                                     const SizedBox(height: 2.0),

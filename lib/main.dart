@@ -169,7 +169,7 @@ class MyApp extends StatelessWidget {
     return Builder(
       builder: (context) {
         return MaterialApp(
-          title: 'Hubli', // Changed title
+          title: 'Sungoods', // Changed title
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: appColorsPrimary),

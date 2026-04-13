@@ -51,7 +51,8 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            // Use debug signing for release builds (for testing without keystore)
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 }
