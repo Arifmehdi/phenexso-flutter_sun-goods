@@ -6,6 +6,7 @@ import 'package:sungoods/utils/colors.dart';
 import 'dart:async'; // Import for Timer
 import 'package:provider/provider.dart';
 import 'package:sungoods/providers/product_provider.dart'; // Import ProductProvider
+import 'package:sungoods/providers/category_provider.dart'; // Import CategoryProvider
 import 'package:cached_network_image/cached_network_image.dart';
 // Import UserRole enum
 
@@ -98,6 +99,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
         clearProducts: true,
       );
     } else {
+      // Home page: Always fetch all products to ensure we clear any category filter
       productProvider.resetProducts();
       productProvider.fetchProducts(clearProducts: true);
     }
@@ -175,195 +177,198 @@ class _ProductListScreenState extends State<ProductListScreen> {
             controller: _scrollController, // Attach the scroll controller
             child: Column(
               children: [
-                // Image Slider/Carousel
-                Stack(
-                  children: [
-                    GestureDetector(
-                      onPanDown: (_) => _pauseAutoSlide(),
-                      onPanEnd: (_) => _resumeAutoSlide(),
-                      onPanCancel: () => _resumeAutoSlide(),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 16.0,
-                          vertical: 4.0,
-                        ),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12.0),
-                          child: SizedBox(
-                            height: 180.0,
-                            child: PageView.builder(
-                              controller: _pageController,
-                              itemCount: _sliderImages.length,
-                              itemBuilder: (context, index) {
-                                return Image.asset(
-                                  _sliderImages[index],
-                                  fit: BoxFit.cover,
-                                );
-                              },
+                if (_searchController.text.isEmpty) ...[
+                  // Image Slider/Carousel
+                  Stack(
+                    children: [
+                      GestureDetector(
+                        onPanDown: (_) => _pauseAutoSlide(),
+                        onPanEnd: (_) => _resumeAutoSlide(),
+                        onPanCancel: () => _resumeAutoSlide(),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 4.0,
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12.0),
+                            child: SizedBox(
+                              height: 180.0,
+                              child: PageView.builder(
+                                controller: _pageController,
+                                itemCount: _sliderImages.length,
+                                itemBuilder: (context, index) {
+                                  return Image.asset(
+                                    _sliderImages[index],
+                                    fit: BoxFit.cover,
+                                  );
+                                },
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    Positioned(
-                      bottom: 18.0,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: _buildPageIndicator(),
+                      Positioned(
+                        bottom: 18.0,
+                        left: 0,
+                        right: 0,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: _buildPageIndicator(),
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
+                    ],
                   ),
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children:
-                          _menuItems
-                              .expand(
-                                (item) => [
-                                  Column(
-                                    children: [
-                                      SizedBox(
-                                        width: 60.0,
-                                        height: 60.0,
-                                        child: Card(
-                                          elevation: 2.0,
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              8.0,
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    child: SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children:
+                            _menuItems
+                                .expand(
+                                  (item) => [
+                                    Column(
+                                      children: [
+                                        SizedBox(
+                                          width: 60.0,
+                                          height: 60.0,
+                                          child: Card(
+                                            elevation: 2.0,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(
+                                                8.0,
+                                              ),
                                             ),
-                                          ),
-                                          child: InkWell(
-                                            onTap: item['onTap'],
-                                            borderRadius: BorderRadius.circular(
-                                              8.0,
-                                            ),
-                                            child: Center(
-                                              child: Icon(
-                                                item['icon'],
-                                                size: 28.0,
-                                                color: Theme.of(
-                                                  context,
-                                                ).primaryColor,
+                                            child: InkWell(
+                                              onTap: item['onTap'],
+                                              borderRadius: BorderRadius.circular(
+                                                8.0,
+                                              ),
+                                              child: Center(
+                                                child: Icon(
+                                                  item['icon'],
+                                                  size: 28.0,
+                                                  color: Theme.of(
+                                                    context,
+                                                  ).primaryColor,
+                                                ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      const SizedBox(height: 4.0),
-                                      SizedBox(
-                                        width: 60.0,
-                                        height: 28.0,
-                                        child: Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 2.0,
-                                          ),
-                                          child: Text(
-                                            item['title'],
-                                            textAlign: TextAlign.center,
-                                            style: const TextStyle(
-                                              fontSize: 10.0,
-                                              fontWeight: FontWeight.bold,
+                                        const SizedBox(height: 4.0),
+                                        SizedBox(
+                                          width: 60.0,
+                                          height: 28.0,
+                                          child: Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 2.0,
                                             ),
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
+                                            child: Text(
+                                              item['title'],
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                fontSize: 10.0,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
                                           ),
                                         ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 8.0),
-                                ],
-                              )
-                              .toList()
-                            ..removeLast(),
+                                      ],
+                                    ),
+                                    const SizedBox(width: 8.0),
+                                  ],
+                                )
+                                .toList()
+                              ..removeLast(),
+                      ),
                     ),
                   ),
-                ),
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    child: Image.asset(
+                      'assets/images/shop_ad.png',
+                      fit: BoxFit.cover,
+                      width: double.infinity,
+                      height: 70.0,
+                    ),
                   ),
-                  child: Image.asset(
-                    'assets/images/shop_ad.png',
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: 70.0,
-                  ),
-                ),
 
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text(
-                            'Deals for you',
-                            style: TextStyle(
-                              fontSize: 16.0,
-                              fontWeight: FontWeight.bold,
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              'Deals for you',
+                              style: TextStyle(
+                                fontSize: 18.0,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.arrow_forward_ios),
-                            onPressed: () {
-                              Navigator.of(context).pushNamed('/featured-products');
-                            },
-                            iconSize: 14.0,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8.0),
-                      Builder(
-                        builder: (context) {
-                          final featuredProducts = products.where((p) => p.featured == 1).take(5).toList();
-                          
-                          if (featuredProducts.isEmpty) {
-                            return Container(
-                              height: 220,
-                              width: double.infinity,
-                              decoration: BoxDecoration(
-                                color: Colors.grey[100],
-                                borderRadius: BorderRadius.circular(8),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.of(context).pushNamed('/featured-products');
+                              },
+                              child: const Row(
+                                children: [
+                                  Text('View All', style: TextStyle(fontSize: 12)),
+                                  Icon(Icons.arrow_forward_ios, size: 12),
+                                ],
                               ),
-                              child: const Center(
-                                child: Text(
-                                  'No deals available now',
-                                  style: TextStyle(color: Colors.grey, fontSize: 16),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8.0),
+                        Builder(
+                          builder: (context) {
+                            final featuredProducts = products.where((p) => p.featured == 1).take(10).toList();
+                            
+                            if (featuredProducts.isEmpty) {
+                              return Container(
+                                height: 150,
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[100],
+                                  borderRadius: BorderRadius.circular(8),
                                 ),
-                              ),
-                            );
-                          }
+                                child: const Center(
+                                  child: Text(
+                                    'No deals available now',
+                                    style: TextStyle(color: Colors.grey, fontSize: 16),
+                                  ),
+                                ),
+                              );
+                            }
 
-                          return SizedBox(
-                            height: 220,
-                            child: SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              child: Row(
-                                children: featuredProducts.map((product) {
+                            return SizedBox(
+                              height: 220,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: featuredProducts.length,
+                                itemBuilder: (context, index) {
+                                  final product = featuredProducts[index];
                                   return Padding(
-                                    padding: const EdgeInsets.only(right: 10.0),
+                                    padding: const EdgeInsets.only(right: 12.0),
                                     child: SizedBox(
-                                      width:
-                                          MediaQuery.of(context).size.width * 0.35,
+                                      width: 150,
                                       child: GestureDetector(
                                         onTap: () {
                                           Navigator.of(context).pushNamed(
@@ -372,23 +377,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                           );
                                         },
                                         child: Card(
-                                          elevation: 2.0,
+                                          elevation: 1.0,
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              8.0,
-                                            ),
+                                            borderRadius: BorderRadius.circular(12.0),
                                           ),
                                           child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
+                                            crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
-                                              AspectRatio(
-                                                aspectRatio: 1.0,
+                                              Expanded(
                                                 child: ClipRRect(
-                                                  borderRadius:
-                                                      const BorderRadius.vertical(
-                                                        top: Radius.circular(8.0),
-                                                      ),
+                                                  borderRadius: const BorderRadius.vertical(
+                                                    top: Radius.circular(12.0),
+                                                  ),
                                                   child: _buildProductImage(
                                                     product.imageUrls,
                                                   ),
@@ -401,28 +401,22 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                                       CrossAxisAlignment.start,
                                                   children: [
                                                     Text(
+                                                      product.name,
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                      style: const TextStyle(
+                                                        fontWeight: FontWeight.w500,
+                                                        fontSize: 13.0,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(height: 4.0),
+                                                    Text(
                                                       '৳ ${NumberFormat.currency(locale: 'en_BD', symbol: '').format(product.price)}',
                                                       style: const TextStyle(
                                                         fontWeight: FontWeight.bold,
                                                         fontSize: 14.0,
                                                         color: appColorsPrimary,
                                                       ),
-                                                    ),
-                                                    const SizedBox(height: 2.0),
-                                                    Row(
-                                                      children: [
-                                                        const Icon(
-                                                          Icons.star,
-                                                          color: Colors.amber,
-                                                          size: 14,
-                                                        ),
-                                                        Text(
-                                                          '${product.rating.toStringAsFixed(1)} | 4k sold',
-                                                          style: const TextStyle(
-                                                            fontSize: 12.0,
-                                                          ),
-                                                        ),
-                                                      ],
                                                     ),
                                                   ],
                                                 ),
@@ -433,12 +427,28 @@ class _ProductListScreenState extends State<ProductListScreen> {
                                       ),
                                     ),
                                   );
-                                }).toList(),
+                                },
                               ),
-                            ),
-                          );
-                        }
+                            );
+                          }
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
+                  child: Row(
+                    children: [
+                      Text(
+                        _searchController.text.isEmpty ? 'All Products' : 'Search Results',
+                        style: const TextStyle(
+                          fontSize: 18.0,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
+                      const Spacer(),
                     ],
                   ),
                 ),
@@ -484,6 +494,93 @@ class _ProductListScreenState extends State<ProductListScreen> {
               child: const Icon(Icons.arrow_upward, color: Colors.white),
             )
           : null,
+      drawer: _buildCategoryDrawer(context),
+    );
+  }
+
+  Widget _buildCategoryDrawer(BuildContext context) {
+    final categoryProvider = Provider.of<CategoryProvider>(context, listen: false);
+    if (categoryProvider.categories.isEmpty) {
+      categoryProvider.fetchCategories();
+    }
+
+    return Drawer(
+      child: SafeArea(
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Categories',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: Consumer<CategoryProvider>(
+                builder: (context, categoryProvider, child) {
+                  if (categoryProvider.isLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (categoryProvider.errorMessage != null) {
+                    return Center(
+                      child: Text('Error: ${categoryProvider.errorMessage}'),
+                    );
+                  }
+
+                  if (categoryProvider.categories.isEmpty) {
+                    return const Center(child: Text('No categories available'));
+                  }
+
+                  return ListView.builder(
+                    itemCount: categoryProvider.categories.length,
+                    itemBuilder: (context, index) {
+                      final category = categoryProvider.categories[index];
+                      return ListTile(
+                        leading: category.imageUrl != null
+                            ? ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  category.imageUrl!,
+                                  width: 40,
+                                  height: 40,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) =>
+                                      const Icon(Icons.category),
+                                ),
+                              )
+                            : const Icon(Icons.category),
+                        title: Text(category.name),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          Navigator.pop(context);
+                          Navigator.of(context).pushNamed(
+                            '/category-products',
+                            arguments: {'slug': category.slug, 'name': category.name},
+                          );
+                        },
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
