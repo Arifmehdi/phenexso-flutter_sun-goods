@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:sungoods/providers/product_provider.dart'; // Import ProductProvider
 import 'package:sungoods/providers/category_provider.dart'; // Import CategoryProvider
 import 'package:sungoods/providers/slider_provider.dart';
+import 'package:sungoods/providers/banner_provider.dart';
 import 'package:sungoods/utils/api_constants.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'dart:io';
@@ -149,8 +150,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
         onSearch: _filterProducts,
         showDrawerButton: true,
       ),
-      body: Consumer2<ProductProvider, SliderProvider>(
-        builder: (context, productProvider, sliderProvider, child) {
+      body: Consumer3<ProductProvider, SliderProvider, BannerProvider>(
+        builder: (context, productProvider, sliderProvider, bannerProvider, child) {
           if (productProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -290,18 +291,18 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     ),
                   ),
 
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
-                    child: Image.asset(
-                      'assets/images/shop_ad.png',
-                      fit: BoxFit.cover,
-                      width: double.infinity,
-                      height: 70.0,
-                    ),
-                  ),
+                  // Banners Section
+                  if (bannerProvider.activeBanners.isNotEmpty)
+                    ...bannerProvider.activeBanners.map((banner) => Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16.0,
+                        vertical: 8.0,
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8.0),
+                        child: _buildBannerItem(banner),
+                      ),
+                    )),
 
                   Padding(
                     padding: const EdgeInsets.symmetric(
@@ -653,6 +654,36 @@ class _ProductListScreenState extends State<ProductListScreen> {
     } else {
       return Image.file(
         File(imageUrl),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.image),
+      );
+    }
+  }
+
+  Widget _buildBannerItem(dynamic banner) {
+    final String imageUrl = banner.imageUrl;
+    final double height = 80.0;
+    if (imageUrl.startsWith('http')) {
+      return CachedNetworkImage(
+        imageUrl: imageUrl,
+        height: height,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Container(color: Colors.grey[200], height: height),
+        errorWidget: (context, url, error) => const Icon(Icons.broken_image),
+      );
+    } else if (imageUrl.startsWith('assets/')) {
+      return Image.asset(
+        imageUrl,
+        height: height,
+        width: double.infinity,
+        fit: BoxFit.cover,
+      );
+    } else {
+      return Image.file(
+        File(imageUrl),
+        height: height,
+        width: double.infinity,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) => const Icon(Icons.image),
       );

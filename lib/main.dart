@@ -50,6 +50,7 @@ import 'package:sungoods/screens/notification_screen.dart';
 import 'package:sungoods/screens/featured_products_screen.dart'; // Add this import
 import 'package:sungoods/services/slider_service.dart';
 import 'package:sungoods/providers/slider_provider.dart';
+import 'package:sungoods/providers/banner_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -64,6 +65,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => AuthProvider()),
+        ChangeNotifierProvider(create: (context) => BannerProvider()),
         ChangeNotifierProxyProvider<AuthProvider, SliderProvider>(
           create: (context) => SliderProvider(SliderService('')),
           update: (context, auth, sliderProvider) {

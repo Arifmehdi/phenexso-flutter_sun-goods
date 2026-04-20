@@ -11,6 +11,7 @@ import 'package:sungoods/screens/profile_edit_screen.dart';
 import 'package:sungoods/screens/password_change_screen.dart';
 import 'package:sungoods/screens/contact_support_screen.dart';
 import 'package:sungoods/screens/slider_management_screen.dart';
+import 'package:sungoods/screens/banner_management_screen.dart';
 import 'package:sungoods/providers/slider_provider.dart';
 import 'package:sungoods/widgets/user_header.dart';
 import 'package:intl/intl.dart';
@@ -56,6 +57,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
     const ChatScreen(),
     const AdminHomeScreen(), // Index 5: Dashboard
     const SliderManagementScreen(), // Index 6: Slider Management
+    const BannerManagementScreen(), // Index 7: Banner Management
   ];
 
   void _onItemTapped(int index) {
@@ -104,12 +106,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen> {
             icon: Icon(Icons.dashboard),
             label: 'Dashboard',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.linear_scale),
-            label: 'Sliders',
-          ),
         ],
-        currentIndex: _selectedIndex,
+        currentIndex: _selectedIndex > 5 ? 5 : _selectedIndex,
         selectedItemColor: Theme.of(context).primaryColor,
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
@@ -254,6 +252,15 @@ class AdminDrawer extends StatelessWidget {
             onTap: () {
               Navigator.pop(context);
               onTabChange(6);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.ad_units),
+            title: const Text('Banner Management'),
+            selected: selectedIndex == 7,
+            onTap: () {
+              Navigator.pop(context);
+              onTabChange(7);
             },
           ),
           const Divider(),
