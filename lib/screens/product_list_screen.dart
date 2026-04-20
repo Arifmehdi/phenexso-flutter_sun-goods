@@ -7,8 +7,10 @@ import 'dart:async'; // Import for Timer
 import 'package:provider/provider.dart';
 import 'package:sungoods/providers/product_provider.dart'; // Import ProductProvider
 import 'package:sungoods/providers/category_provider.dart'; // Import CategoryProvider
+import 'package:sungoods/providers/slider_provider.dart';
+import 'package:sungoods/utils/api_constants.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-// Import UserRole enum
+import 'dart:io';
 
 class ProductListScreen extends StatefulWidget {
   final String? categorySlug;
@@ -28,14 +30,6 @@ class _ProductListScreenState extends State<ProductListScreen> {
   final PageController _pageController = PageController();
   late Timer _timer;
   int _currentPage = 0;
-
-  final List<String> _sliderImages = [
-    'assets/images/slider/fruit.png',
-    'assets/images/slider/fresh.png',
-    'assets/images/slider/dairy.png',
-    'assets/images/slider/supply_chain_1.png',
-    'assets/images/slider/supply_chain_2.png',
-  ];
 
   List<Map<String, dynamic>> get _menuItems {
     return [
@@ -77,9 +71,11 @@ class _ProductListScreenState extends State<ProductListScreen> {
       _fetchInitialProducts();
 
       _pageController.addListener(() {
-        setState(() {
-          _currentPage = _pageController.page!.round();
-        });
+        if (_pageController.hasClients) {
+          setState(() {
+            _currentPage = _pageController.page!.round();
+          });
+        }
       });
 
       _startAutoSlide();
@@ -108,17 +104,21 @@ class _ProductListScreenState extends State<ProductListScreen> {
   void _startAutoSlide() {
     _timer = Timer.periodic(const Duration(seconds: 3), (Timer timer) {
       if (_pageController.hasClients) {
-        // Check if controller is attached
-        if (_currentPage < _sliderImages.length - 1) {
-          _currentPage++;
-        } else {
-          _currentPage = 0;
+        final sliderProvider = Provider.of<SliderProvider>(context, listen: false);
+        final int itemCount = sliderProvider.activeSliders.length;
+        
+        if (itemCount > 0) {
+          if (_currentPage < itemCount - 1) {
+            _currentPage++;
+          } else {
+            _currentPage = 0;
+          }
+          _pageController.animateToPage(
+            _currentPage,
+            duration: const Duration(milliseconds: 350),
+            curve: Curves.easeIn,
+          );
         }
-        _pageController.animateToPage(
-          _currentPage,
-          duration: const Duration(milliseconds: 350),
-          curve: Curves.easeIn,
-        );
       }
     });
   }
@@ -149,8 +149,8 @@ class _ProductListScreenState extends State<ProductListScreen> {
         onSearch: _filterProducts,
         showDrawerButton: true,
       ),
-      body: Consumer<ProductProvider>(
-        builder: (context, productProvider, child) {
+      body: Consumer2<ProductProvider, SliderProvider>(
+        builder: (context, productProvider, sliderProvider, child) {
           if (productProvider.isLoading) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -196,12 +196,10 @@ class _ProductListScreenState extends State<ProductListScreen> {
                               height: 180.0,
                               child: PageView.builder(
                                 controller: _pageController,
-                                itemCount: _sliderImages.length,
+                                itemCount: sliderProvider.activeSliders.length,
                                 itemBuilder: (context, index) {
-                                  return Image.asset(
-                                    _sliderImages[index],
-                                    fit: BoxFit.cover,
-                                  );
+                                  final slider = sliderProvider.activeSliders[index];
+                                  return _buildSliderItem(slider);
                                 },
                               ),
                             ),
@@ -214,7 +212,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         right: 0,
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: _buildPageIndicator(),
+                          children: _buildPageIndicator(sliderProvider),
                         ),
                       ),
                     ],
@@ -638,9 +636,34 @@ class _ProductListScreenState extends State<ProductListScreen> {
     }
   }
 
-  List<Widget> _buildPageIndicator() {
+  Widget _buildSliderItem(dynamic slider) {
+    final String imageUrl = slider.imageUrl;
+    if (imageUrl.startsWith('http')) {
+      return CachedNetworkImage(
+        imageUrl: imageUrl,
+        fit: BoxFit.cover,
+        placeholder: (context, url) => Container(color: Colors.grey[200]),
+        errorWidget: (context, url, error) => const Icon(Icons.broken_image),
+      );
+    } else if (imageUrl.startsWith('assets/')) {
+      return Image.asset(
+        imageUrl,
+        fit: BoxFit.cover,
+      );
+    } else {
+      return Image.file(
+        File(imageUrl),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => const Icon(Icons.image),
+      );
+    }
+  }
+
+  List<Widget> _buildPageIndicator(SliderProvider sliderProvider) {
     List<Widget> list = [];
-    for (int i = 0; i < _sliderImages.length; i++) {
+    final int itemCount = sliderProvider.activeSliders.length;
+
+    for (int i = 0; i < itemCount; i++) {
       list.add(i == _currentPage ? _indicator(true) : _indicator(false));
     }
     return list;

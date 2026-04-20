@@ -13,4 +13,5 @@ class ApiConstants {
   static const String productsEndpoint = '$baseUrl/api/products'; // New: Products Endpoint
   static const String sellerProductsEndpoint = '$baseUrl/api/seller/products'; // New: Seller Products Endpoint
   static const String notificationsEndpoint = '$baseUrl/api/notifications'; // New: Notifications Endpoint
+  static const String slidersEndpoint = '$baseUrl/api/sliders'; // New: Sliders Endpoint
 }
