@@ -532,14 +532,14 @@ class _ProductListScreenState extends State<ProductListScreen> {
                     );
                   }
 
-                  if (categoryProvider.categories.isEmpty) {
+                  if (categoryProvider.activeCategories.isEmpty) {
                     return const Center(child: Text('No categories available'));
                   }
 
                   return ListView.builder(
-                    itemCount: categoryProvider.categories.length,
+                    itemCount: categoryProvider.activeCategories.length,
                     itemBuilder: (context, index) {
-                      final category = categoryProvider.categories[index];
+                      final category = categoryProvider.activeCategories[index];
                       return ListTile(
                         leading: category.imageUrl != null
                             ? ClipRRect(

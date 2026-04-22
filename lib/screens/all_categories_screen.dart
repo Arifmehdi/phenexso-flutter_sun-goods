@@ -92,7 +92,7 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
             return Center(child: Text('Error: ${categoryProvider.errorMessage}'));
           }
 
-          if (categoryProvider.categories.isEmpty) {
+          if (categoryProvider.activeCategories.isEmpty) {
             return const Center(child: Text('No categories found.'));
           }
 
@@ -106,9 +106,9 @@ class _AllCategoriesScreenState extends State<AllCategoriesScreen> {
                 mainAxisSpacing: 10.0,
                 childAspectRatio: 0.8, // Adjust as needed for image and text
               ),
-              itemCount: categoryProvider.categories.length,
+              itemCount: categoryProvider.activeCategories.length,
               itemBuilder: (context, index) {
-                final category = categoryProvider.categories[index];
+                final category = categoryProvider.activeCategories[index];
                 return CategoryCard(category: category);
               },
             ),

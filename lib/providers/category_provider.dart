@@ -9,6 +9,7 @@ class CategoryProvider with ChangeNotifier {
   String? _errorMessage;
 
   List<Category> get categories => _categories;
+  List<Category> get activeCategories => _categories.where((cat) => cat.active == 1).toList();
   bool get isLoading => _isLoading;
   String? get errorMessage => _errorMessage;
 

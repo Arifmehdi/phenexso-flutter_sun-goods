@@ -3,12 +3,14 @@ class Category {
   final String name;
   final String slug;
   final String? imageUrl; // Nullable as image might not always be present
+  final int active; // Add active field
 
   Category({
     required this.id,
     required this.name,
     required this.slug,
     this.imageUrl,
+    required this.active,
   });
 
   factory Category.fromJson(Map<String, dynamic> json) {
@@ -28,6 +30,7 @@ class Category {
               json['image'].isNotEmpty) // Use 'image' as per table.txt
           ? 'https://test.musafirinternational.com/uslive/pnism/${json['image']}' // Assuming similar image path prefix as products
           : null,
+      active: int.tryParse(json['active']?.toString() ?? '0') ?? 0,
     );
   }
 }
