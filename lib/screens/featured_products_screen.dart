@@ -30,8 +30,8 @@ class _FeaturedProductsScreenState extends State<FeaturedProductsScreen> {
     // Fetch products if list is empty
     Future.microtask(() {
       final provider = Provider.of<ProductProvider>(context, listen: false);
-      if (provider.products.isEmpty) {
-        provider.fetchProducts(clearProducts: true);
+      if (provider.featuredProducts.isEmpty) {
+        provider.fetchFeaturedProducts();
       }
     });
 
@@ -39,13 +39,6 @@ class _FeaturedProductsScreenState extends State<FeaturedProductsScreen> {
       setState(() {
         _showBackToTop = _scrollController.offset > 300;
       });
-
-      if (_scrollController.position.pixels == _scrollController.position.maxScrollExtent) {
-        final productProvider = Provider.of<ProductProvider>(context, listen: false);
-        if (productProvider.hasMore && !productProvider.isFetchingMore) {
-          productProvider.fetchNextPage();
-        }
-      }
     });
   }
 
@@ -86,15 +79,14 @@ class _FeaturedProductsScreenState extends State<FeaturedProductsScreen> {
       ),
       body: Consumer<ProductProvider>(
         builder: (context, productProvider, child) {
-          if (productProvider.isLoading && productProvider.products.isEmpty) {
+          if (productProvider.isFeaturedLoading && productProvider.featuredProducts.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          final featuredProducts = productProvider.products.where((p) {
-            final isFeatured = p.featured == 1;
+          final featuredProducts = productProvider.featuredProducts.where((p) {
             final matchesSearch = _searchController.text.isEmpty || 
                                  p.name.toLowerCase().contains(_searchController.text.toLowerCase());
-            return isFeatured && matchesSearch;
+            return matchesSearch;
           }).toList();
 
           if (featuredProducts.isEmpty) {
@@ -112,11 +104,8 @@ class _FeaturedProductsScreenState extends State<FeaturedProductsScreen> {
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
             ),
-            itemCount: featuredProducts.length + (productProvider.isFetchingMore ? 1 : 0),
+            itemCount: featuredProducts.length,
             itemBuilder: (ctx, i) {
-              if (i == featuredProducts.length) {
-                return const Center(child: CircularProgressIndicator());
-              }
               final product = featuredProducts[i];
               return _FeaturedProductItem(product: product);
             },

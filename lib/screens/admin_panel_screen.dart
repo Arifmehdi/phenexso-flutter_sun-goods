@@ -344,7 +344,7 @@ class AdminHomeScreen extends StatelessWidget {
             _buildMetricCard(
               context,
               'Total Products',
-              productProvider.totalProducts.toString(),
+              productProvider.products.length.toString(),
               Icons.shopping_basket,
             ),
             _buildMetricCard(

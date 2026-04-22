@@ -89,17 +89,9 @@ class _ProductListScreenState extends State<ProductListScreen> {
       context,
       listen: false,
     );
-    if (widget.categorySlug != null) {
-      productProvider.resetProducts();
-      productProvider.fetchProducts(
-        categorySlug: widget.categorySlug,
-        clearProducts: true,
-      );
-    } else {
-      // Home page: Always fetch all products to ensure we clear any category filter
-      productProvider.resetProducts();
-      productProvider.fetchProducts(clearProducts: true);
-    }
+    // Home page: Always fetch all products and featured products
+    productProvider.fetchFeaturedProducts();
+    productProvider.fetchProducts(clearProducts: true);
   }
 
   void _startAutoSlide() {
@@ -338,7 +330,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
                         const SizedBox(height: 8.0),
                         Builder(
                           builder: (context) {
-                            final featuredProducts = products.where((p) => p.featured == 1).take(10).toList();
+                            final featuredProducts = productProvider.featuredProducts;
                             
                             if (featuredProducts.isEmpty) {
                               return Container(
@@ -604,7 +596,7 @@ class _ProductListScreenState extends State<ProductListScreen> {
       if (!productProvider.isLoading &&
           !productProvider.isFetchingMore &&
           productProvider.hasMore) {
-        productProvider.fetchNextPage(categorySlug: widget.categorySlug);
+        productProvider.fetchNextPage();
       }
     }
   }

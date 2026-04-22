@@ -5,55 +5,56 @@ import '../models/product.dart'; // Adjust the import path as necessary
 import '../utils/api_constants.dart';
 
 class ProductProvider with ChangeNotifier {
-  List<Product> _products = [];
+  List<Product> _products = []; // Main list (Home)
+  List<Product> _categoryProducts = []; // Category-specific list
+  List<Product> _featuredProducts = []; // Featured products
+  
   bool _isLoading = false;
+  bool _isFeaturedLoading = false;
+  bool _isCategoryLoading = false;
+  
   String? _errorMessage;
-  int _currentPage = 1; // Current page number for pagination
-  final int _pageSize = 10; // Number of items per page
-  bool _hasMore = true; // Indicates if there are more products to load
-  bool _isFetchingMore = false; // Prevents multiple concurrent fetchMore calls
-  int _totalProducts = 0; // Total count of products from backend
+  
+  // Home pagination
+  int _currentPage = 1;
+  final int _pageSize = 10;
+  bool _hasMore = true;
+  bool _isFetchingMore = false;
+  
+  // Category pagination
+  int _categoryCurrentPage = 1;
+  bool _categoryHasMore = true;
+  bool _isCategoryFetchingMore = false;
 
   List<Product> get products => _products;
+  List<Product> get categoryProducts => _categoryProducts;
+  List<Product> get featuredProducts => _featuredProducts;
+  
   bool get isLoading => _isLoading;
+  bool get isFeaturedLoading => _isFeaturedLoading;
+  bool get isCategoryLoading => _isCategoryLoading;
+  
   String? get errorMessage => _errorMessage;
-  bool get hasMore => _hasMore; // Public getter for _hasMore
-  bool get isFetchingMore => _isFetchingMore; // Public getter for _isFetchingMore
-  int get totalProducts => _totalProducts; // Public getter for totalProducts
+  
+  bool get hasMore => _hasMore;
+  bool get isFetchingMore => _isFetchingMore;
+  
+  bool get categoryHasMore => _categoryHasMore;
+  bool get isCategoryFetchingMore => _isCategoryFetchingMore;
 
-  ProductProvider() {
-    // fetchProducts(); // Removed: Fetching should be triggered by widget lifecycle
-  }
+  int get totalProducts => _products.length;
+  int get pageSize => _pageSize;
 
-  Future<void> fetchProducts({String? categorySlug, int page = 1, int? pageSize, bool clearProducts = true}) async {
-    if (clearProducts) {
-      _isLoading = true;
-      _errorMessage = null;
-      _currentPage = 1;
-      _hasMore = true;
-      _products = []; // Clear products only on initial load or category change
-      notifyListeners();
-    } else if (!_hasMore || _isFetchingMore) {
-      return; // Do not fetch if no more products or already fetching
-    }
+  ProductProvider();
 
-    _isFetchingMore = true; // Set fetching flag to true
-    // No need to set _isLoading = true here if clearProducts is false,
-    // as _isLoading is for initial full page load indicator.
-    // We will show a separate indicator for fetching more.
+  Future<void> fetchFeaturedProducts() async {
+    _isFeaturedLoading = true;
+    notifyListeners();
 
     try {
-      String url;
-      if (categorySlug != null) {
-        url = '${ApiConstants.baseUrl}/api/products/by-slug/$categorySlug';
-      } else {
-        url = '${ApiConstants.baseUrl}/api/products';
-      }
-
-      // Add pagination parameters
+      final url = '${ApiConstants.baseUrl}/api/products';
       final uri = Uri.parse(url).replace(queryParameters: {
-        'page': page.toString(),
-        'per_page': (pageSize ?? _pageSize).toString(),
+        'per_page': '100', // Fetch more to find featured ones
       });
 
       final response = await http.get(uri);
@@ -65,7 +66,46 @@ class ProductProvider with ChangeNotifier {
           final List<Product> fetchedProducts =
               productJsonList.map((json) => Product.fromJson(json)).toList();
           
-          // Filter to only include active products
+          _featuredProducts = fetchedProducts.where((p) => p.active == 1 && p.featured == 1).toList();
+        }
+      }
+    } catch (error) {
+      debugPrint('Error fetching featured products: $error');
+    } finally {
+      _isFeaturedLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> fetchProducts({int page = 1, bool clearProducts = true}) async {
+    if (clearProducts) {
+      _isLoading = true;
+      _errorMessage = null;
+      _currentPage = 1;
+      _hasMore = true;
+      _products = [];
+      notifyListeners();
+    } else if (!_hasMore || _isFetchingMore) {
+      return;
+    }
+
+    _isFetchingMore = true;
+    try {
+      final url = '${ApiConstants.baseUrl}/api/products';
+      final uri = Uri.parse(url).replace(queryParameters: {
+        'page': page.toString(),
+        'per_page': _pageSize.toString(),
+      });
+
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        if (responseData.containsKey('data') && responseData['data'] is List) {
+          final List<dynamic> productJsonList = responseData['data'];
+          final List<Product> fetchedProducts =
+              productJsonList.map((json) => Product.fromJson(json)).toList();
+          
           final List<Product> newProducts = fetchedProducts.where((p) => p.active == 1).toList();
 
           if (clearProducts) {
@@ -75,59 +115,88 @@ class ProductProvider with ChangeNotifier {
           }
 
           if (responseData['meta'] != null) {
-            _totalProducts = responseData['meta']['total'] ?? 0;
             int lastPage = responseData['meta']['last_page'] ?? 1;
             _hasMore = page < lastPage;
           } else {
-            _totalProducts = responseData['total'] ?? 0;
-            _hasMore = newProducts.length == (pageSize ?? _pageSize);
+            _hasMore = fetchedProducts.length == _pageSize;
           }
-          
-          _currentPage = page; // Update current page after successful fetch
-        } else {
-          _errorMessage =
-              'Failed to parse products: "data" key not found or not a list.';
-          _hasMore = false; // No more data if parsing fails
+          _currentPage = page;
         }
       } else {
-        _errorMessage = 'Failed to load products: ${response.statusCode}';
-        _hasMore = false; // No more data on error
+        _errorMessage = 'Failed to load products';
       }
     } catch (error) {
-      _errorMessage = 'Error fetching products: $error';
-      _hasMore = false; // No more data on error
+      _errorMessage = 'Error: $error';
     } finally {
-      _isLoading = false; // Reset initial loading state
-      _isFetchingMore = false; // Reset fetching flag
+      _isLoading = false;
+      _isFetchingMore = false;
       notifyListeners();
     }
   }
 
-  Future<void> fetchProductsByCategorySlug(String slug) async {
-    await fetchProducts(categorySlug: slug, clearProducts: true);
-  }
-
-  Future<void> fetchNextPage({String? categorySlug}) async {
-    if (!_hasMore || _isFetchingMore) {
+  Future<void> fetchCategoryProducts({required String categorySlug, int page = 1, bool clearProducts = true}) async {
+    if (clearProducts) {
+      _isCategoryLoading = true;
+      _errorMessage = null;
+      _categoryCurrentPage = 1;
+      _categoryHasMore = true;
+      _categoryProducts = [];
+      notifyListeners();
+    } else if (!_categoryHasMore || _isCategoryFetchingMore) {
       return;
     }
-    await fetchProducts(
-        categorySlug: categorySlug,
-        page: _currentPage + 1,
-        pageSize: _pageSize,
-        clearProducts: false);
-  }
 
-  // Method to get a product by ID (useful for detail screen)
-  Product? getProductById(String id) {
+    _isCategoryFetchingMore = true;
     try {
-      return _products.firstWhere((product) => product.id == id);
-    } catch (e) {
-      return null;
+      final url = '${ApiConstants.baseUrl}/api/products/by-slug/$categorySlug';
+      final uri = Uri.parse(url).replace(queryParameters: {
+        'page': page.toString(),
+        'per_page': _pageSize.toString(),
+      });
+
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+        if (responseData.containsKey('data') && responseData['data'] is List) {
+          final List<dynamic> productJsonList = responseData['data'];
+          final List<Product> fetchedProducts =
+              productJsonList.map((json) => Product.fromJson(json)).toList();
+          
+          final List<Product> newProducts = fetchedProducts.where((p) => p.active == 1).toList();
+
+          if (clearProducts) {
+            _categoryProducts = newProducts;
+          } else {
+            _categoryProducts.addAll(newProducts);
+          }
+
+          if (responseData['meta'] != null) {
+            int lastPage = responseData['meta']['last_page'] ?? 1;
+            _categoryHasMore = page < lastPage;
+          } else {
+            _categoryHasMore = fetchedProducts.length == _pageSize;
+          }
+          _categoryCurrentPage = page;
+        }
+      }
+    } catch (error) {
+      debugPrint('Error fetching category products: $error');
+    } finally {
+      _isCategoryLoading = false;
+      _isCategoryFetchingMore = false;
+      notifyListeners();
     }
   }
 
-  // Method to reset the product list and pagination state, useful for refreshing
+  Future<void> fetchNextPage() async {
+    await fetchProducts(page: _currentPage + 1, clearProducts: false);
+  }
+
+  Future<void> fetchNextCategoryPage(String categorySlug) async {
+    await fetchCategoryProducts(categorySlug: categorySlug, page: _categoryCurrentPage + 1, clearProducts: false);
+  }
+
   void resetProducts() {
     _products = [];
     _currentPage = 1;
@@ -137,20 +206,3 @@ class ProductProvider with ChangeNotifier {
     notifyListeners();
   }
 }
-
-// Add a fromJson factory method to your Product model
-// This should ideally be in product.dart, but adding here for context
-/*
-extension ProductExtension on Product {
-  static Product fromJson(Map<String, dynamic> json) {
-    return Product(
-      id: json['id'].toString(), // Ensure id is string
-      name: json['name'] as String,
-      price: (json['price'] as num).toDouble(),
-      imageUrls: List<String>.from(json['imageUrls'] ?? ['assets/images/placeholder.png']), // Handle missing or null imageUrls
-      category: json['category'] as String,
-      rating: (json['rating'] as num?)?.toDouble() ?? 0.0, // Handle missing or null rating
-    );
-  }
-}
-*/

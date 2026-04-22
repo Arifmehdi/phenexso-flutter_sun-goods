@@ -539,7 +539,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
       Provider.of<ProductProvider>(
         context,
         listen: false,
-      ).fetchProducts(pageSize: 100);
+      ).fetchProducts();
     });
   }
 

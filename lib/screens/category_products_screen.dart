@@ -39,7 +39,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     Future.delayed(Duration.zero).then((_) {
       if (!mounted) return; // Add mounted check here
       Provider.of<ProductProvider>(context, listen: false)
-          .fetchProducts(categorySlug: widget.categorySlug, clearProducts: true)
+          .fetchCategoryProducts(categorySlug: widget.categorySlug, clearProducts: true)
           .then((_) {
             // Use fetchProducts directly
             if (!mounted) return; // Add mounted check here
@@ -64,8 +64,8 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           context,
           listen: false,
         );
-        if (productProvider.hasMore && !productProvider.isFetchingMore) {
-          productProvider.fetchNextPage(categorySlug: widget.categorySlug);
+        if (productProvider.categoryHasMore && !productProvider.isCategoryFetchingMore) {
+          productProvider.fetchNextCategoryPage(widget.categorySlug);
         }
       }
     });
@@ -133,7 +133,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
     );
     final query = _searchController.text.toLowerCase();
     setState(() {
-      _filteredProducts = productProvider.products.where((product) {
+      _filteredProducts = productProvider.categoryProducts.where((product) {
         return product.name.toLowerCase().contains(query);
       }).toList();
     });
@@ -150,7 +150,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
       ),
       body: Consumer<ProductProvider>(
         builder: (context, productProvider, child) {
-          if (productProvider.isLoading) {
+          if (productProvider.isCategoryLoading) {
             return const Center(child: CircularProgressIndicator());
           }
           if (productProvider.errorMessage != null) {
@@ -160,7 +160,7 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
           }
           // Display filtered products, or all products if no search query
           final productsToDisplay = _searchController.text.isEmpty
-              ? productProvider.products
+              ? productProvider.categoryProducts
               : _filteredProducts;
 
           if (productsToDisplay.isEmpty) {
@@ -180,12 +180,12 @@ class _CategoryProductsScreenState extends State<CategoryProductsScreen> {
             ),
             itemCount:
                 productsToDisplay.length +
-                (productProvider.isFetchingMore
+                (productProvider.isCategoryFetchingMore
                     ? 1
                     : 0), // Add 1 for loading indicator
             itemBuilder: (ctx, i) {
               if (i == productsToDisplay.length &&
-                  productProvider.isFetchingMore) {
+                  productProvider.isCategoryFetchingMore) {
                 return const Center(
                   child: CircularProgressIndicator(),
                 ); // Loading indicator
